@@ -91,7 +91,30 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
         if (localStreamRef.current) {
           // Host already has a stream, answer immediately
           const stream = localStreamRef.current;
+          const videoTracks = stream.getVideoTracks();
+          const audioTracks = stream.getAudioTracks();
+          
           console.log('[WebRTC] Answering call with existing stream');
+          console.log('[WebRTC] Stream details when answering:', {
+            id: stream.id,
+            active: stream.active,
+            videoTracks: videoTracks.length,
+            audioTracks: audioTracks.length,
+          });
+          
+          // Log audio track details
+          audioTracks.forEach((track, index) => {
+            console.log(`[WebRTC] Audio track ${index}:`, {
+              id: track.id,
+              enabled: track.enabled,
+              readyState: track.readyState,
+              muted: track.muted,
+            });
+            if (!track.enabled) {
+              console.log('[WebRTC] Enabling audio track');
+              track.enabled = true;
+            }
+          });
           
           try {
             call.answer(stream);
@@ -230,6 +253,50 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
 
       call.on('stream', (stream) => {
         console.log('[WebRTC] Received remote stream from host');
+        
+        const videoTracks = stream.getVideoTracks();
+        const audioTracks = stream.getAudioTracks();
+        const allTracks = stream.getTracks();
+        
+        console.log('[WebRTC] Received stream details:', {
+          id: stream.id,
+          active: stream.active,
+          videoTracks: videoTracks.length,
+          audioTracks: audioTracks.length,
+          totalTracks: allTracks.length,
+        });
+        
+        // Log all tracks
+        allTracks.forEach((track, index) => {
+          console.log(`[WebRTC] Track ${index}:`, {
+            id: track.id,
+            kind: track.kind,
+            enabled: track.enabled,
+            readyState: track.readyState,
+            muted: track.muted,
+            label: track.label,
+          });
+        });
+        
+        // Log audio tracks specifically
+        if (audioTracks.length > 0) {
+          audioTracks.forEach((track, index) => {
+            console.log(`[WebRTC] Audio track ${index} details:`, {
+              id: track.id,
+              enabled: track.enabled,
+              readyState: track.readyState,
+              muted: track.muted,
+              settings: track.getSettings(),
+            });
+            if (!track.enabled) {
+              console.log('[WebRTC] Enabling received audio track');
+              track.enabled = true;
+            }
+          });
+        } else {
+          console.error('[WebRTC] ERROR: No audio tracks in received stream!');
+        }
+        
         dummyStream.getTracks().forEach(track => track.stop());
         setRemoteStream(stream);
         setError(null);
