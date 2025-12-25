@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Share2, Heart, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Share2, Heart, Users, Loader2, Play } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatPanel from '@/components/ChatPanel';
 import LiveBadge from '@/components/LiveBadge';
@@ -12,6 +12,7 @@ const Watch = () => {
   const { streamId } = useParams();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasConnected, setHasConnected] = useState(false);
+  const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
   const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
 
   const { isConnected, remoteStream, error, connectToStream, messages, sendMessage, viewerCount } = useWebRTC({
@@ -80,13 +81,23 @@ const Watch = () => {
       videoRef.current.play()
         .then(() => {
           console.log('[Watch] Video playback started successfully');
+          setNeedsUserInteraction(false);
         })
         .catch((err) => {
           console.error('[Watch] Error playing video:', err);
-          // Try to play with user interaction
-          videoRef.current?.play().catch((err2) => {
-            console.error('[Watch] Failed to play video even after retry:', err2);
-          });
+          // If autoplay is blocked, show play button
+          if (err.name === 'NotAllowedError') {
+            console.log('[Watch] Autoplay blocked, user interaction required');
+            setNeedsUserInteraction(true);
+          } else {
+            // Try to play with user interaction
+            videoRef.current?.play().catch((err2) => {
+              console.error('[Watch] Failed to play video even after retry:', err2);
+              if (err2.name === 'NotAllowedError') {
+                setNeedsUserInteraction(true);
+              }
+            });
+          }
         });
       
       // Log when video starts playing
@@ -173,9 +184,32 @@ const Watch = () => {
               )}
 
               {remoteStream && (
-                <div className="absolute top-4 left-4">
-                  <LiveBadge size="lg" />
-                </div>
+                <>
+                  <div className="absolute top-4 left-4">
+                    <LiveBadge size="lg" />
+                  </div>
+                  {needsUserInteraction && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                      <Button
+                        size="lg"
+                        onClick={() => {
+                          videoRef.current?.play()
+                            .then(() => {
+                              console.log('[Watch] Video playback started after user interaction');
+                              setNeedsUserInteraction(false);
+                            })
+                            .catch((err) => {
+                              console.error('[Watch] Error playing video after click:', err);
+                            });
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="w-5 h-5" />
+                        Play Stream
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </motion.div>
 
