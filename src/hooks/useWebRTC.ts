@@ -94,6 +94,19 @@ export const useWebRTC = ({ streamId, isHost }: UseWebRTCOptions) => {
             }
           });
           
+          // Ensure audio tracks are enabled
+          audioTracks.forEach(track => {
+            console.log('[WebRTC] Audio track state:', {
+              enabled: track.enabled,
+              readyState: track.readyState,
+              muted: track.muted,
+            });
+            if (!track.enabled) {
+              console.log('[WebRTC] Enabling audio track');
+              track.enabled = true;
+            }
+          });
+          
           // Use the original stream directly - PeerJS should handle it correctly
           // Creating a new MediaStream might cause track transmission issues
           console.log('[WebRTC] Answering with original stream (not cloned)');
@@ -168,6 +181,14 @@ export const useWebRTC = ({ streamId, isHost }: UseWebRTCOptions) => {
     videoTracks.forEach(track => {
       if (!track.enabled) {
         console.log('[WebRTC] Enabling video track in broadcast stream');
+        track.enabled = true;
+      }
+    });
+    
+    // Ensure audio tracks are enabled
+    audioTracks.forEach(track => {
+      if (!track.enabled) {
+        console.log('[WebRTC] Enabling audio track in broadcast stream');
         track.enabled = true;
       }
     });

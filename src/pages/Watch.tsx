@@ -51,7 +51,28 @@ const Watch = () => {
         settings: videoTracks[0].getSettings(),
       });
       
+      // Check audio tracks
+      const audioTracks = remoteStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        console.log('[Watch] Audio track details:', {
+          enabled: audioTracks[0].enabled,
+          readyState: audioTracks[0].readyState,
+          muted: audioTracks[0].muted,
+          settings: audioTracks[0].getSettings(),
+        });
+        // Ensure audio track is enabled
+        if (!audioTracks[0].enabled) {
+          console.log('[Watch] Enabling audio track');
+          audioTracks[0].enabled = true;
+        }
+      } else {
+        console.warn('[Watch] No audio tracks in stream!');
+      }
+      
       videoRef.current.srcObject = remoteStream;
+      
+      // Ensure video is not muted to hear audio
+      videoRef.current.muted = false;
       
       // Explicitly play the video
       videoRef.current.play()
@@ -116,7 +137,6 @@ const Watch = () => {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                muted
                 className={`absolute inset-0 w-full h-full object-cover bg-black ${remoteStream ? 'block' : 'hidden'}`}
               />
               {!remoteStream && (
