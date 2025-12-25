@@ -116,9 +116,27 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
             }
           });
           
+          // Create a new MediaStream with all tracks to ensure they're all transmitted
+          // This helps ensure PeerJS includes both video and audio tracks
+          const answerStream = new MediaStream();
+          videoTracks.forEach(track => {
+            answerStream.addTrack(track);
+            console.log('[WebRTC] Added video track to answer stream');
+          });
+          audioTracks.forEach(track => {
+            answerStream.addTrack(track);
+            console.log('[WebRTC] Added audio track to answer stream');
+          });
+          
+          console.log('[WebRTC] Answer stream created with:', {
+            videoTracks: answerStream.getVideoTracks().length,
+            audioTracks: answerStream.getAudioTracks().length,
+            totalTracks: answerStream.getTracks().length,
+          });
+          
           try {
-            call.answer(stream);
-            console.log('[WebRTC] Call answered successfully');
+            call.answer(answerStream);
+            console.log('[WebRTC] Call answered successfully with stream containing all tracks');
             connectionsRef.current.set(call.peer, call);
             setViewerCount(connectionsRef.current.size);
 
@@ -171,11 +189,31 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
     console.log('[WebRTC] Pending calls to answer:', pendingCallsRef.current.size);
     
     // Answer all pending calls with the new stream
+    const videoTracks = stream.getVideoTracks();
+    const audioTracks = stream.getAudioTracks();
+    
     pendingCallsRef.current.forEach((call, peerId) => {
       console.log('[WebRTC] Answering pending call from viewer:', peerId);
+      
+      // Create a new MediaStream with all tracks for pending calls too
+      const answerStream = new MediaStream();
+      videoTracks.forEach(track => {
+        answerStream.addTrack(track);
+        console.log('[WebRTC] Added video track to pending call answer stream');
+      });
+      audioTracks.forEach(track => {
+        answerStream.addTrack(track);
+        console.log('[WebRTC] Added audio track to pending call answer stream');
+      });
+      
+      console.log('[WebRTC] Pending call answer stream:', {
+        videoTracks: answerStream.getVideoTracks().length,
+        audioTracks: answerStream.getAudioTracks().length,
+      });
+      
       try {
-        console.log('[WebRTC] Answering pending call with stream');
-        call.answer(stream);
+        console.log('[WebRTC] Answering pending call with stream containing all tracks');
+        call.answer(answerStream);
         console.log('[WebRTC] Pending call answered successfully');
         connectionsRef.current.set(peerId, call);
         pendingCallsRef.current.delete(peerId);
@@ -226,12 +264,50 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
     console.log('[WebRTC] Connecting to host:', hostPeerId);
     
     const initiateCall = async () => {
+      // Create a dummy stream with both video and audio tracks
+      // This ensures PeerJS negotiates for both video and audio capabilities
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
       const ctx = canvas.getContext('2d');
       if (ctx) ctx.fillRect(0, 0, 1, 1);
-      const dummyStream = canvas.captureStream(1);
+      const dummyVideoStream = canvas.captureStream(1);
+      
+      // Create a dummy audio track using AudioContext
+      let dummyAudioStream: MediaStream;
+      try {
+        const audioContext = new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 0; // Silent
+        oscillator.connect(gainNode);
+        const destination = audioContext.createMediaStreamDestination();
+        gainNode.connect(destination);
+        oscillator.start();
+        dummyAudioStream = destination.stream;
+        // Stop oscillator after a short time
+        setTimeout(() => oscillator.stop(), 100);
+        console.log('[WebRTC] Created dummy audio track for call initiation');
+      } catch (err) {
+        console.warn('[WebRTC] Could not create dummy audio track:', err);
+        dummyAudioStream = new MediaStream();
+      }
+      
+      // Combine video and audio tracks into one stream
+      const dummyStream = new MediaStream();
+      dummyVideoStream.getVideoTracks().forEach(track => {
+        dummyStream.addTrack(track);
+        track.enabled = false; // Disable to save bandwidth
+      });
+      dummyAudioStream.getAudioTracks().forEach(track => {
+        dummyStream.addTrack(track);
+        track.enabled = false; // Disable to save bandwidth
+      });
+      
+      console.log('[WebRTC] Dummy stream for call initiation:', {
+        videoTracks: dummyStream.getVideoTracks().length,
+        audioTracks: dummyStream.getAudioTracks().length,
+      });
       
       const call = peer.call(hostPeerId, dummyStream);
       
