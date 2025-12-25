@@ -33,7 +33,78 @@ const Watch = () => {
   useEffect(() => {
     if (remoteStream && videoRef.current) {
       console.log('[Watch] Attaching remote stream to video element');
+      console.log('[Watch] Stream details:', {
+        id: remoteStream.id,
+        active: remoteStream.active,
+        videoTracks: remoteStream.getVideoTracks().length,
+        audioTracks: remoteStream.getAudioTracks().length,
+      });
+      
+      // Check video tracks
+      const videoTracks = remoteStream.getVideoTracks();
+      if (videoTracks.length === 0) {
+        console.error('[Watch] No video tracks in stream!');
+        return;
+      }
+      
+      console.log('[Watch] Video track details:', {
+        enabled: videoTracks[0].enabled,
+        readyState: videoTracks[0].readyState,
+        settings: videoTracks[0].getSettings(),
+      });
+      
+      // Check audio tracks
+      const audioTracks = remoteStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        console.log('[Watch] Audio track details:', {
+          enabled: audioTracks[0].enabled,
+          readyState: audioTracks[0].readyState,
+          muted: audioTracks[0].muted,
+          settings: audioTracks[0].getSettings(),
+        });
+        // Ensure audio track is enabled
+        if (!audioTracks[0].enabled) {
+          console.log('[Watch] Enabling audio track');
+          audioTracks[0].enabled = true;
+        }
+      } else {
+        console.warn('[Watch] No audio tracks in stream!');
+      }
+      
       videoRef.current.srcObject = remoteStream;
+      
+      // Ensure video is not muted to hear audio
+      videoRef.current.muted = false;
+      
+      // Explicitly play the video
+      videoRef.current.play()
+        .then(() => {
+          console.log('[Watch] Video playback started successfully');
+        })
+        .catch((err) => {
+          console.error('[Watch] Error playing video:', err);
+          // Try to play with user interaction
+          videoRef.current?.play().catch((err2) => {
+            console.error('[Watch] Failed to play video even after retry:', err2);
+          });
+        });
+      
+      // Log when video starts playing
+      videoRef.current.onloadedmetadata = () => {
+        console.log('[Watch] Video metadata loaded');
+        console.log('[Watch] Video dimensions:', {
+          videoWidth: videoRef.current?.videoWidth,
+          videoHeight: videoRef.current?.videoHeight,
+        });
+      };
+      
+      videoRef.current.onplay = () => {
+        console.log('[Watch] Video started playing');
+      };
+      
+      videoRef.current.onerror = (err) => {
+        console.error('[Watch] Video element error:', err);
+      };
     }
   }, [remoteStream]);
 
@@ -64,14 +135,13 @@ const Watch = () => {
               animate={{ opacity: 1, y: 0 }}
               className="video-container mb-4 relative"
             >
-              {remoteStream ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover bg-black"
-                />
-              ) : (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className={`absolute inset-0 w-full h-full object-cover bg-black ${remoteStream ? 'block' : 'hidden'}`}
+              />
+              {!remoteStream && (
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center">
                   <div className="text-center">
                     {error ? (
