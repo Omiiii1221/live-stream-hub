@@ -1,26 +1,10 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Radio, User, LogOut, Video, Search } from 'lucide-react';
+import { Radio, Video, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const Header: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -54,64 +38,12 @@ const Header: React.FC = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          {isAuthenticated ? (
-            <>
-              {user?.role === 'host' && (
-                <Button variant="hero" size="sm" asChild>
-                  <Link to="/go-live">
-                    <Video className="w-4 h-4" />
-                    Go Live
-                  </Link>
-                </Button>
-              )}
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="glass" size="icon" className="rounded-full">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-orange-400 flex items-center justify-center text-primary-foreground font-bold text-sm">
-                      {user?.username?.charAt(0).toUpperCase()}
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="font-medium">{user?.username}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    <p className="text-xs text-primary mt-1 capitalize">{user?.role}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  {user?.role === 'host' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="cursor-pointer">
-                        <Video className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/auth?mode=login">Log in</Link>
-              </Button>
-              <Button variant="default" size="sm" asChild>
-                <Link to="/auth?mode=register">Sign up</Link>
-              </Button>
-            </>
-          )}
+          <Button variant="hero" size="sm" asChild>
+            <Link to="/go-live">
+              <Video className="w-4 h-4" />
+              Go Live
+            </Link>
+          </Button>
         </div>
       </div>
     </motion.header>
