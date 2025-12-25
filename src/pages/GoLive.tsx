@@ -12,6 +12,8 @@ import {
   Users,
   MessageSquare,
   StopCircle,
+  Copy,
+  Check,
 } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatPanel from '@/components/ChatPanel';
@@ -21,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useWebRTC } from '@/hooks/useWebRTC';
 
 const GoLive = () => {
   const { toast } = useToast();
@@ -33,8 +36,18 @@ const GoLive = () => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sourceType, setSourceType] = useState<'camera' | 'screen'>('camera');
-  const [viewerCount] = useState(0);
   const [streamDuration, setStreamDuration] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  // Generate a unique stream ID for this session
+  const [streamId] = useState(() => Math.random().toString(36).substr(2, 9));
+
+  const { isConnected, viewerCount, startBroadcast, stopBroadcast } = useWebRTC({
+    streamId,
+    isHost: true,
+  });
+
+  const shareUrl = `${window.location.origin}/watch/${streamId}`;
 
   // Stream duration timer
   useEffect(() => {
@@ -58,6 +71,9 @@ const GoLive = () => {
 
   const startCamera = async () => {
     try {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
@@ -67,6 +83,8 @@ const GoLive = () => {
         videoRef.current.srcObject = stream;
       }
       setSourceType('camera');
+      setIsVideoEnabled(true);
+      setIsAudioEnabled(true);
     } catch (error) {
       toast({
         title: 'Camera Error',
@@ -78,6 +96,9 @@ const GoLive = () => {
 
   const startScreenShare = async () => {
     try {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true,
@@ -87,6 +108,8 @@ const GoLive = () => {
         videoRef.current.srcObject = stream;
       }
       setSourceType('screen');
+      setIsVideoEnabled(true);
+      setIsAudioEnabled(true);
     } catch (error) {
       toast({
         title: 'Screen Share Error',
@@ -131,14 +154,25 @@ const GoLive = () => {
       });
       return;
     }
+    if (!isConnected) {
+      toast({
+        title: 'Not Connected',
+        description: 'Waiting for WebRTC connection. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    startBroadcast(mediaStream);
     setIsLive(true);
     toast({
       title: "You're Live!",
-      description: 'Your stream has started.',
+      description: 'Share the link for viewers to join.',
     });
   };
 
   const endStream = () => {
+    stopBroadcast();
     setIsLive(false);
     setStreamDuration(0);
     if (mediaStream) {
@@ -149,6 +183,13 @@ const GoLive = () => {
       title: 'Stream Ended',
       description: 'Your stream has been ended.',
     });
+  };
+
+  const copyShareUrl = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    toast({ title: 'Link Copied!', description: 'Share it with your viewers.' });
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -263,8 +304,8 @@ const GoLive = () => {
               </div>
             </motion.div>
 
-            {/* Stream Settings */}
-            {!isLive && (
+            {/* Stream Settings / Share Link */}
+            {!isLive ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -299,6 +340,27 @@ const GoLive = () => {
                   </div>
                 </div>
               </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="glass-card p-6"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Copy className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Share Your Stream</h2>
+                </div>
+                <div className="flex gap-2">
+                  <Input value={shareUrl} readOnly className="flex-1" />
+                  <Button onClick={copyShareUrl} variant="outline">
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Share this link with viewers to let them watch your stream.
+                </p>
+              </motion.div>
             )}
           </div>
 
@@ -310,7 +372,7 @@ const GoLive = () => {
             className="lg:w-96 h-[600px]"
           >
             {isLive ? (
-              <ChatPanel streamId="host-preview" viewerCount={viewerCount} />
+              <ChatPanel streamId={streamId} viewerCount={viewerCount} />
             ) : (
               <div className="chat-container h-full flex items-center justify-center text-center p-6">
                 <div>
