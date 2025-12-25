@@ -12,10 +12,12 @@ const Watch = () => {
   const { streamId } = useParams();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasConnected, setHasConnected] = useState(false);
+  const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
 
-  const { isConnected, remoteStream, error, connectToStream } = useWebRTC({
+  const { isConnected, remoteStream, error, connectToStream, messages, sendMessage, viewerCount } = useWebRTC({
     streamId: streamId || '',
     isHost: false,
+    username,
   });
 
   // Connect to stream when peer is ready
@@ -135,6 +137,10 @@ const Watch = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{viewerCount}</span>
+                      </div>
                   <Button variant="glass" size="icon">
                     <Heart className="w-4 h-4" />
                   </Button>
@@ -159,7 +165,7 @@ const Watch = () => {
             transition={{ delay: 0.2 }}
             className="lg:w-96 h-[600px]"
           >
-            <ChatPanel streamId={streamId} viewerCount={0} />
+            <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
           </motion.div>
         </div>
       </div>

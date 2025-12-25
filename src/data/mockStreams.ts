@@ -46,30 +46,3 @@ export const mockStreams: Stream[] = [
     createdAt: new Date(),
   },
 ];
-
-export const mockChatMessages: ChatMessage[] = [
-  {
-    id: '1',
-    streamId: '1',
-    userId: 'viewer1',
-    username: 'CoolViewer',
-    message: 'This is awesome! 🔥',
-    timestamp: new Date(Date.now() - 1000 * 60 * 2),
-  },
-  {
-    id: '2',
-    streamId: '1',
-    userId: 'viewer2',
-    username: 'TechFan',
-    message: 'Can you explain the signaling process again?',
-    timestamp: new Date(Date.now() - 1000 * 60),
-  },
-  {
-    id: '3',
-    streamId: '1',
-    userId: 'viewer3',
-    username: 'DevLearner',
-    message: 'First time here, loving the content!',
-    timestamp: new Date(Date.now() - 1000 * 30),
-  },
-];

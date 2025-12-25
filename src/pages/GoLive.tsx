@@ -42,9 +42,10 @@ const GoLive = () => {
   // Generate a unique stream ID for this session
   const [streamId] = useState(() => Math.random().toString(36).substr(2, 9));
 
-  const { isConnected, viewerCount, startBroadcast, stopBroadcast } = useWebRTC({
+  const { isConnected, viewerCount, startBroadcast, stopBroadcast, messages, sendMessage } = useWebRTC({
     streamId,
     isHost: true,
+    username: 'Host',
   });
 
   const shareUrl = `${window.location.origin}/watch/${streamId}`;
@@ -372,7 +373,7 @@ const GoLive = () => {
             className="lg:w-96 h-[600px]"
           >
             {isLive ? (
-              <ChatPanel streamId={streamId} viewerCount={viewerCount} />
+              <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
             ) : (
               <div className="chat-container h-full flex items-center justify-center text-center p-6">
                 <div>

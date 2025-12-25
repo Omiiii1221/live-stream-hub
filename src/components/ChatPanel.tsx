@@ -4,18 +4,16 @@ import { Send, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage } from '@/types';
-import { mockChatMessages } from '@/data/mockStreams';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatPanelProps {
-  streamId: string;
+  messages: ChatMessage[];
   viewerCount: number;
+  sendMessage: (message: string) => void;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages);
+const ChatPanel: React.FC<ChatPanelProps> = ({ messages, viewerCount, sendMessage }) => {
   const [newMessage, setNewMessage] = useState('');
-  const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,16 +28,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    const message: ChatMessage = {
-      id: crypto.randomUUID(),
-      streamId,
-      userId: crypto.randomUUID(),
-      username,
-      message: newMessage.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, message]);
+    sendMessage(newMessage.trim());
     setNewMessage('');
   };
 
@@ -73,7 +62,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
                   <div className="flex items-baseline gap-2">
                     <span className="font-medium text-sm text-primary">{msg.username}</span>
                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      {formatDistanceToNow(msg.timestamp)} ago
+                      {formatDistanceToNow(new Date(msg.timestamp))} ago
                     </span>
                   </div>
                   <p className="text-sm text-foreground/90 break-words">{msg.message}</p>
