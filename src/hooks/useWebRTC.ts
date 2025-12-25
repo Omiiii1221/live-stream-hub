@@ -59,6 +59,8 @@ export const useWebRTC = ({ streamId, isHost }: UseWebRTCOptions) => {
       newPeer.on('call', (call) => {
         console.log('[WebRTC] Incoming call from viewer:', call.peer);
         console.log('[WebRTC] Call object:', call);
+        console.log('[WebRTC] localStreamRef.current exists?', !!localStreamRef.current);
+        console.log('[WebRTC] localStreamRef.current:', localStreamRef.current);
         
         if (localStreamRef.current) {
           // Host already has a stream, answer immediately
@@ -95,15 +97,29 @@ export const useWebRTC = ({ streamId, isHost }: UseWebRTCOptions) => {
           // Use the original stream directly - PeerJS should handle it correctly
           // Creating a new MediaStream might cause track transmission issues
           console.log('[WebRTC] Answering with original stream (not cloned)');
-          call.answer(stream);
-          connectionsRef.current.set(call.peer, call);
-          setViewerCount(connectionsRef.current.size);
-
-          call.on('close', () => {
-            console.log('[WebRTC] Viewer disconnected:', call.peer);
-            connectionsRef.current.delete(call.peer);
+          
+          try {
+            call.answer(stream);
+            console.log('[WebRTC] Call answered successfully');
+            connectionsRef.current.set(call.peer, call);
             setViewerCount(connectionsRef.current.size);
-          });
+
+            call.on('stream', (remoteStream) => {
+              console.log('[WebRTC] Received stream from viewer (unexpected):', remoteStream);
+            });
+
+            call.on('close', () => {
+              console.log('[WebRTC] Viewer disconnected:', call.peer);
+              connectionsRef.current.delete(call.peer);
+              setViewerCount(connectionsRef.current.size);
+            });
+
+            call.on('error', (err) => {
+              console.error('[WebRTC] Call error after answering:', err);
+            });
+          } catch (error) {
+            console.error('[WebRTC] Error answering call:', error);
+          }
         } else {
           // Host doesn't have a stream yet, store the call for later
           console.log('[WebRTC] Storing pending call, waiting for stream');
@@ -157,6 +173,12 @@ export const useWebRTC = ({ streamId, isHost }: UseWebRTCOptions) => {
     });
     
     localStreamRef.current = stream;
+    console.log('[WebRTC] localStreamRef.current set to:', {
+      id: stream.id,
+      videoTracks: stream.getVideoTracks().length,
+      audioTracks: stream.getAudioTracks().length,
+    });
+    console.log('[WebRTC] Pending calls to answer:', pendingCallsRef.current.size);
     
     // Answer all pending calls with the new stream
     pendingCallsRef.current.forEach((call, peerId) => {
@@ -168,15 +190,29 @@ export const useWebRTC = ({ streamId, isHost }: UseWebRTCOptions) => {
       });
       
       // Use the original stream directly - PeerJS should handle it correctly
-      call.answer(stream);
-      connectionsRef.current.set(peerId, call);
-      pendingCallsRef.current.delete(peerId);
-      
-      call.on('close', () => {
-        console.log('[WebRTC] Viewer disconnected:', peerId);
-        connectionsRef.current.delete(peerId);
-        setViewerCount(connectionsRef.current.size);
-      });
+      try {
+        console.log('[WebRTC] Answering pending call with stream');
+        call.answer(stream);
+        console.log('[WebRTC] Pending call answered successfully');
+        connectionsRef.current.set(peerId, call);
+        pendingCallsRef.current.delete(peerId);
+        
+        call.on('stream', (remoteStream) => {
+          console.log('[WebRTC] Received stream from viewer (unexpected):', remoteStream);
+        });
+
+        call.on('close', () => {
+          console.log('[WebRTC] Viewer disconnected:', peerId);
+          connectionsRef.current.delete(peerId);
+          setViewerCount(connectionsRef.current.size);
+        });
+
+        call.on('error', (err) => {
+          console.error('[WebRTC] Pending call error after answering:', err);
+        });
+      } catch (error) {
+        console.error('[WebRTC] Error answering pending call:', error);
+      }
     });
     
     // Update viewer count
