@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage } from '@/types';
 import { mockChatMessages } from '@/data/mockStreams';
-import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatPanelProps {
@@ -14,9 +13,9 @@ interface ChatPanelProps {
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
-  const { user, isAuthenticated } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages);
   const [newMessage, setNewMessage] = useState('');
+  const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,13 +28,13 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim()) return;
 
     const message: ChatMessage = {
       id: crypto.randomUUID(),
       streamId,
-      userId: user.id,
-      username: user.username,
+      userId: crypto.randomUUID(),
+      username,
       message: newMessage.trim(),
       timestamp: new Date(),
     };
@@ -47,7 +46,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
   return (
     <div className="chat-container h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
+      <div className="flex items-center justify-between p-4 border-b border-border/40">
         <h3 className="font-semibold">Live Chat</h3>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Users className="w-4 h-4" />
@@ -87,27 +86,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ streamId, viewerCount }) => {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-white/10">
-        {isAuthenticated ? (
-          <form onSubmit={handleSend} className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Send a message..."
-              className="flex-1"
-            />
-            <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
-        ) : (
-          <div className="text-center text-sm text-muted-foreground">
-            <a href="/auth?mode=login" className="text-primary hover:underline">
-              Log in
-            </a>{' '}
-            to chat
-          </div>
-        )}
+      <div className="p-4 border-t border-border/40">
+        <form onSubmit={handleSend} className="flex gap-2">
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Send a message..."
+            className="flex-1"
+          />
+          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+            <Send className="w-4 h-4" />
+          </Button>
+        </form>
       </div>
     </div>
   );

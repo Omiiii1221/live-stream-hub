@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Video,
@@ -21,12 +20,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 const GoLive = () => {
-  const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -39,13 +35,6 @@ const GoLive = () => {
   const [sourceType, setSourceType] = useState<'camera' | 'screen'>('camera');
   const [viewerCount] = useState(0);
   const [streamDuration, setStreamDuration] = useState(0);
-
-  // Redirect if not host
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'host') {
-      navigate('/auth?mode=login');
-    }
-  }, [isAuthenticated, user, navigate]);
 
   // Stream duration timer
   useEffect(() => {
@@ -221,7 +210,7 @@ const GoLive = () => {
               </div>
 
               {/* Controls */}
-              <div className="p-4 border-t border-white/10">
+              <div className="p-4 border-t border-border/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Button
