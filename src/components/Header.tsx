@@ -47,8 +47,8 @@ const Header: React.FC = () => {
           <div className={`${isSearchOpen ? 'hidden sm:flex' : 'flex'}`}>
             <Button variant="hero" size="sm" asChild>
               <Link to="/go-live">
-                <Video className="w-4 h-4 mr-1 md:mr-2" />
-                <span className="hidden md:inline">Go Live</span>
+                <Video className="w-4 h-4 mr-2" />
+                <span className="inline">Go Live</span>
               </Link>
             </Button>
           </div>
