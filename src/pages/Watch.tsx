@@ -1,22 +1,45 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Share2, Heart, Settings, Users } from 'lucide-react';
+import { ArrowLeft, Share2, Heart, Users, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatPanel from '@/components/ChatPanel';
 import LiveBadge from '@/components/LiveBadge';
 import { Button } from '@/components/ui/button';
-import { mockStreams } from '@/data/mockStreams';
-import { formatDistanceToNow } from 'date-fns';
+import { useWebRTC } from '@/hooks/useWebRTC';
 
 const Watch = () => {
   const { streamId } = useParams();
-  const stream = mockStreams.find((s) => s.id === streamId);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasConnected, setHasConnected] = useState(false);
 
-  if (!stream) {
+  const { isConnected, remoteStream, error, connectToStream } = useWebRTC({
+    streamId: streamId || '',
+    isHost: false,
+  });
+
+  // Connect to stream when peer is ready
+  useEffect(() => {
+    if (isConnected && !hasConnected) {
+      console.log('[Watch] Peer connected, connecting to stream...');
+      connectToStream();
+      setHasConnected(true);
+    }
+  }, [isConnected, hasConnected, connectToStream]);
+
+  // Attach remote stream to video element
+  useEffect(() => {
+    if (remoteStream && videoRef.current) {
+      console.log('[Watch] Attaching remote stream to video element');
+      videoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  if (!streamId) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Stream not found</h1>
+          <h1 className="text-2xl font-bold mb-4">Invalid stream link</h1>
           <Button asChild>
             <Link to="/">Go back home</Link>
           </Button>
@@ -37,30 +60,51 @@ const Watch = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="video-container mb-4"
+              className="video-container mb-4 relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-8xl mb-4 opacity-50">📺</div>
-                  <p className="text-muted-foreground">Live stream preview</p>
-                  <p className="text-sm text-muted-foreground/60">
-                    WebRTC stream would appear here
-                  </p>
+              {remoteStream ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover bg-black"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center">
+                  <div className="text-center">
+                    {error ? (
+                      <>
+                        <div className="text-6xl mb-4">📺</div>
+                        <p className="text-destructive font-medium mb-2">{error}</p>
+                        <p className="text-sm text-muted-foreground">
+                          The host may not be live yet. Try refreshing.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          onClick={() => window.location.reload()}
+                        >
+                          Refresh
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Connecting to stream...</p>
+                        <p className="text-sm text-muted-foreground/60 mt-1">
+                          Waiting for the host to go live
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Live indicator */}
-              <div className="absolute top-4 left-4">
-                <LiveBadge size="lg" />
-              </div>
-
-              {/* Viewer count */}
-              <div className="absolute top-4 right-4">
-                <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg">
-                  <Users className="w-4 h-4 text-primary" />
-                  <span className="font-medium">{stream.viewerCount.toLocaleString()}</span>
+              {remoteStream && (
+                <div className="absolute top-4 left-4">
+                  <LiveBadge size="lg" />
                 </div>
-              </div>
+              )}
             </motion.div>
 
             {/* Stream Info */}
@@ -74,21 +118,18 @@ const Watch = () => {
                 <div className="flex gap-4">
                   {/* Host Avatar */}
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-orange-400 flex items-center justify-center text-primary-foreground font-bold text-xl flex-shrink-0">
-                    {stream.hostName.charAt(0).toUpperCase()}
+                    H
                   </div>
 
                   <div>
-                    <h1 className="text-xl font-bold mb-1">{stream.title}</h1>
+                    <h1 className="text-xl font-bold mb-1">
+                      {remoteStream ? 'Live Stream' : 'Waiting for stream...'}
+                    </h1>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">{stream.hostName}</span>
+                      <span className="font-medium text-foreground">Host</span>
                       <span>•</span>
-                      <span>
-                        Started {stream.startedAt ? formatDistanceToNow(stream.startedAt) : 'just now'} ago
-                      </span>
+                      <span>Stream ID: {streamId}</span>
                     </div>
-                    {stream.description && (
-                      <p className="mt-3 text-muted-foreground">{stream.description}</p>
-                    )}
                   </div>
                 </div>
 
@@ -97,11 +138,14 @@ const Watch = () => {
                   <Button variant="glass" size="icon">
                     <Heart className="w-4 h-4" />
                   </Button>
-                  <Button variant="glass" size="icon">
+                  <Button
+                    variant="glass"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                    }}
+                  >
                     <Share2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="glass" size="icon">
-                    <Settings className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -115,7 +159,7 @@ const Watch = () => {
             transition={{ delay: 0.2 }}
             className="lg:w-96 h-[600px]"
           >
-            <ChatPanel streamId={stream.id} viewerCount={stream.viewerCount} />
+            <ChatPanel streamId={streamId} viewerCount={0} />
           </motion.div>
         </div>
       </div>
