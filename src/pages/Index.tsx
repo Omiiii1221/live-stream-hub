@@ -5,7 +5,7 @@ import StreamCard from '@/components/StreamCard';
 import { mockStreams } from '@/data/mockStreams';
 
 const Index = () => {
-  const liveStreams = mockStreams.filter((s) => s.status === 'live');
+  const lovables = mockStreams.filter((s) => s.status === 'live');
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,7 +29,7 @@ const Index = () => {
                 className="flex items-center gap-2 mb-4"
               >
                 <div className="live-badge">
-                  {liveStreams.length} LIVE NOW
+                  {lovables.length} LIVE NOW
                 </div>
               </motion.div>
               
@@ -74,12 +74,12 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {liveStreams.map((stream, index) => (
+            {lovables.map((stream, index) => (
               <StreamCard key={stream.id} stream={stream} index={index} />
             ))}
           </div>
 
-          {liveStreams.length === 0 && (
+          {lovables.length === 0 && (
             <div className="text-center py-16">
               <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No live streams right now</h3>
