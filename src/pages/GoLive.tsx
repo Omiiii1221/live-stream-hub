@@ -60,6 +60,17 @@ const GoLive = () => {
     return () => clearInterval(interval);
   }, [isLive]);
 
+  // Update video element when mediaStream changes
+  useEffect(() => {
+    if (mediaStream && videoRef.current) {
+      console.log('[GoLive] Updating video element with stream');
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch((err) => {
+        console.error('[GoLive] Error playing video in useEffect:', err);
+      });
+    }
+  }, [mediaStream]);
+
   const formatDuration = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -71,24 +82,32 @@ const GoLive = () => {
 
   const startCamera = async () => {
     try {
+      console.log('[GoLive] Requesting camera access...');
       if (mediaStream) {
         mediaStream.getTracks().forEach((track) => track.stop());
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        },
         audio: true,
       });
+      console.log('[GoLive] Camera access granted, stream obtained:', stream);
+      console.log('[GoLive] Video tracks:', stream.getVideoTracks().length);
+      console.log('[GoLive] Audio tracks:', stream.getAudioTracks().length);
+      
       setMediaStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      
       setSourceType('camera');
       setIsVideoEnabled(true);
       setIsAudioEnabled(true);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[GoLive] Camera error:', error);
       toast({
         title: 'Camera Error',
-        description: 'Could not access camera. Please check permissions.',
+        description: error.message || 'Could not access camera. Please check permissions.',
         variant: 'destructive',
       });
     }
@@ -96,24 +115,40 @@ const GoLive = () => {
 
   const startScreenShare = async () => {
     try {
+      console.log('[GoLive] Requesting screen share access...');
       if (mediaStream) {
         mediaStream.getTracks().forEach((track) => track.stop());
       }
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
         audio: true,
       });
+      console.log('[GoLive] Screen share access granted, stream obtained:', stream);
+      console.log('[GoLive] Video tracks:', stream.getVideoTracks().length);
+      console.log('[GoLive] Audio tracks:', stream.getAudioTracks().length);
+      
       setMediaStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setSourceType('screen');
       setIsVideoEnabled(true);
       setIsAudioEnabled(true);
-    } catch (error) {
+      
+      // Handle when user stops sharing
+      stream.getVideoTracks()[0].onended = () => {
+        console.log('[GoLive] Screen share ended by user');
+        setMediaStream(null);
+        toast({
+          title: 'Screen Share Ended',
+          description: 'Screen sharing was stopped.',
+        });
+      };
+    } catch (error: any) {
+      console.error('[GoLive] Screen share error:', error);
       toast({
         title: 'Screen Share Error',
-        description: 'Could not start screen sharing.',
+        description: error.message || 'Could not start screen sharing.',
         variant: 'destructive',
       });
     }
@@ -207,15 +242,14 @@ const GoLive = () => {
               className="glass-card overflow-hidden"
             >
               <div className="video-container relative bg-background">
-                {mediaStream ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className={`absolute inset-0 w-full h-full object-cover ${mediaStream ? 'block' : 'hidden'}`}
+                />
+                {!mediaStream && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                     <div className="text-6xl opacity-30">📷</div>
                     <p className="text-muted-foreground">Select a video source to preview</p>
