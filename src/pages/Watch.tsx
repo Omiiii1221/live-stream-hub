@@ -19,7 +19,6 @@ const Watch = () => {
   const [viewerStream, setViewerStream] = useState<MediaStream | null>(null);
   const [isViewerVideoEnabled, setIsViewerVideoEnabled] = useState(true);
   const [isViewerAudioEnabled, setIsViewerAudioEnabled] = useState(true);
-  const [hasStartedStream, setHasStartedStream] = useState(false);
   const { toast } = useToast();
 
   const { 
@@ -390,78 +389,88 @@ const Watch = () => {
             </motion.div>
 
             {/* Viewer Sharing Controls */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="glass-card p-6"
-            >
-              {!hasStartedStream ? (
-                <div className="text-center space-y-4">
-                  <h2 className="text-lg font-semibold">Join the Stream</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Click below to start streaming. You can optionally share your camera, microphone, or screen.
-                  </p>
-                  <Button 
-                    onClick={() => setHasStartedStream(true)} 
-                    variant="hero" 
-                    size="lg"
-                    className="w-full"
-                  >
-                    <Radio className="w-5 h-5 mr-2" />
-                    Start Stream
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold">Your Stream</h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        stopViewerSharing();
-                        setHasStartedStream(false);
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  {!viewerStream ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Choose how you want to participate (optional):
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Button onClick={startViewerCamera} variant="outline" className="flex-1">
-                          <Camera className="w-4 h-4 mr-2" />
-                          Camera
-                        </Button>
-                        <Button onClick={startViewerScreenShare} variant="outline" className="flex-1">
-                          <Monitor className="w-4 h-4 mr-2" />
-                          Screen Share
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground text-center mt-2">
-                        You can also just watch without sharing
-                      </p>
+            {remoteStream && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="glass-card p-6"
+              >
+                <h2 className="text-lg font-semibold mb-4">Share Your Stream</h2>
+                
+                {!viewerStream ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Want to participate? Share your camera, microphone, or screen (optional):
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Button 
+                        onClick={startViewerCamera} 
+                        variant="outline" 
+                        className="flex flex-col items-center justify-center h-auto py-4 gap-2"
+                      >
+                        <Camera className="w-5 h-5" />
+                        <span>Camera</span>
+                      </Button>
+                      <Button 
+                        onClick={startViewerScreenShare} 
+                        variant="outline" 
+                        className="flex flex-col items-center justify-center h-auto py-4 gap-2"
+                      >
+                        <Monitor className="w-5 h-5" />
+                        <span>Screen Share</span>
+                      </Button>
+                      <Button 
+                        onClick={async () => {
+                          try {
+                            if (!startViewerStream) return;
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            startViewerStream(stream);
+                            setIsViewerAudioEnabled(true);
+                            toast({
+                              title: 'Microphone Started',
+                              description: 'Your microphone is now active.',
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: 'Microphone Error',
+                              description: error.message || 'Could not access microphone.',
+                              variant: 'destructive',
+                            });
+                          }
+                        }}
+                        variant="outline" 
+                        className="flex flex-col items-center justify-center h-auto py-4 gap-2"
+                      >
+                        <Mic className="w-5 h-5" />
+                        <span>Microphone</span>
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Preview */}
-                      <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                        <video
-                          ref={viewerVideoRef}
-                          autoPlay
-                          muted
-                          playsInline
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      
-                      {/* Controls */}
-                      <div className="flex items-center justify-center gap-2">
+                    <p className="text-xs text-muted-foreground text-center">
+                      You can also just watch without sharing
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Preview */}
+                    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                      <video
+                        ref={viewerVideoRef}
+                        autoPlay
+                        muted
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                      {viewerStream.getVideoTracks().length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                          <Mic className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Controls */}
+                    <div className="flex items-center justify-center gap-2">
+                      {viewerStream.getVideoTracks().length > 0 && (
                         <Button
                           variant={isViewerVideoEnabled ? 'glass' : 'destructive'}
                           size="sm"
@@ -470,6 +479,8 @@ const Watch = () => {
                         >
                           {isViewerVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                         </Button>
+                      )}
+                      {viewerStream.getAudioTracks().length > 0 && (
                         <Button
                           variant={isViewerAudioEnabled ? 'glass' : 'destructive'}
                           size="sm"
@@ -478,20 +489,20 @@ const Watch = () => {
                         >
                           {isViewerAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={stopViewerSharing}
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          Stop
-                        </Button>
-                      </div>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={stopViewerSharing}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Stop Sharing
+                      </Button>
                     </div>
-                  )}
-                </>
-              )}
-            </motion.div>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
 
           {/* Chat Sidebar */}
