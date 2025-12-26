@@ -35,16 +35,16 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, viewerCount, sendMessag
   return (
     <div className="chat-container h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/40">
-        <h3 className="font-semibold">Live Chat</h3>
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <div className="flex items-center justify-between p-3 md:p-4 border-b border-border/40">
+        <h3 className="font-semibold text-sm md:text-base">Live Chat</h3>
+        <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
           <Users className="w-4 h-4" />
           <span>{viewerCount.toLocaleString()}</span>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
         <AnimatePresence mode="popLayout">
           {messages.map((msg) => (
             <motion.div
@@ -60,7 +60,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, viewerCount, sendMessag
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-medium text-sm text-primary">{msg.username}</span>
+                    <span className="font-medium text-xs md:text-sm text-primary">{msg.username}</span>
                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                       {formatDistanceToNow(new Date(msg.timestamp))} ago
                     </span>
@@ -75,15 +75,15 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, viewerCount, sendMessag
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-border/40">
+      <div className="p-3 md:p-4 border-t border-border/40">
         <form onSubmit={handleSend} className="flex gap-2">
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Send a message..."
-            className="flex-1"
+            className="flex-1 h-9"
           />
-          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+          <Button type="submit" size="icon" className="h-9 w-9" disabled={!newMessage.trim()}>
             <Send className="w-4 h-4" />
           </Button>
         </form>

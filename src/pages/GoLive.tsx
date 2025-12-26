@@ -229,37 +229,41 @@ const GoLive = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24 lg:pb-0">
       <Header />
 
-      <div className="container py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="container py-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Main Content */}
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 space-y-4">
             {/* Preview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="glass-card overflow-hidden"
             >
-              <div className="video-container relative bg-background">
+              <div className="video-container relative bg-background/50 aspect-video">
                 <video
                   ref={videoRef}
                   autoPlay
                   muted
                   playsInline
-                  className={`absolute inset-0 w-full h-full object-cover ${mediaStream ? 'block' : 'hidden'}`}
+                  className={`absolute inset-0 w-full h-full object-contain ${
+                    mediaStream ? 'block' : 'hidden'
+                  }`}
                 />
                 {!mediaStream && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                    <div className="text-6xl opacity-30">📷</div>
-                    <p className="text-muted-foreground">Select a video source to preview</p>
-                    <div className="flex gap-3">
-                      <Button onClick={startCamera} variant="outline">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                    <div className="text-4xl md:text-6xl opacity-30">📷</div>
+                    <p className="text-muted-foreground text-sm">
+                      Select a video source to preview
+                    </p>
+                    <div className="flex gap-3 mt-2">
+                      <Button onClick={startCamera} variant="outline" size="sm">
                         <Camera className="w-4 h-4 mr-2" />
                         Camera
                       </Button>
-                      <Button onClick={startScreenShare} variant="outline">
+                      <Button onClick={startScreenShare} variant="outline" size="sm">
                         <Monitor className="w-4 h-4 mr-2" />
                         Screen
                       </Button>
@@ -269,15 +273,15 @@ const GoLive = () => {
 
                 {isLive && (
                   <>
-                    <div className="absolute top-4 left-4">
-                      <LiveBadge size="lg" />
+                    <div className="absolute top-2 left-2 md:top-4 md:left-4">
+                      <LiveBadge />
                     </div>
-                    <div className="absolute top-4 right-4 flex items-center gap-3">
-                      <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                    <div className="absolute top-2 right-2 md:top-4 md:right-4 flex items-center gap-2">
+                      <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-lg">
                         <Users className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{viewerCount}</span>
+                        <span className="font-medium text-sm">{viewerCount}</span>
                       </div>
-                      <div className="bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg font-mono text-sm">
+                      <div className="bg-background/80 backdrop-blur-sm px-2 py-1 rounded-lg font-mono text-xs md:text-sm">
                         {formatDuration(streamDuration)}
                       </div>
                     </div>
@@ -286,55 +290,45 @@ const GoLive = () => {
               </div>
 
               {/* Controls */}
-              <div className="p-4 border-t border-border/40">
-                <div className="flex items-center justify-between">
+              <div className="p-3 md:p-4 border-t border-border/40">
+                <div className="flex flex-wrap items-center justify-center md:justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Button
                       variant={isVideoEnabled ? 'glass' : 'destructive'}
-                      size="icon"
+                      size="lg"
                       onClick={toggleVideo}
                       disabled={!mediaStream}
+                      className="h-11 w-11 md:h-10 md:w-auto md:px-4 md:py-2"
                     >
-                      {isVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                      {isVideoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                      <span className="sr-only md:not-sr-only md:ml-2">Video</span>
                     </Button>
                     <Button
                       variant={isAudioEnabled ? 'glass' : 'destructive'}
-                      size="icon"
+                      size="lg"
                       onClick={toggleAudio}
                       disabled={!mediaStream}
+                      className="h-11 w-11 md:h-10 md:w-auto md:px-4 md:py-2"
                     >
-                      {isAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                    </Button>
-                    <div className="h-6 w-px bg-border mx-2" />
-                    <Button
-                      variant={sourceType === 'camera' ? 'default' : 'glass'}
-                      size="sm"
-                      onClick={startCamera}
-                    >
-                      <Camera className="w-4 h-4 mr-1" />
-                      Camera
-                    </Button>
-                    <Button
-                      variant={sourceType === 'screen' ? 'default' : 'glass'}
-                      size="sm"
-                      onClick={startScreenShare}
-                    >
-                      <Monitor className="w-4 h-4 mr-1" />
-                      Screen
+                      {isAudioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                      <span className="sr-only md:not-sr-only md:ml-2">Audio</span>
                     </Button>
                   </div>
 
-                  {!isLive ? (
-                    <Button variant="hero" size="lg" onClick={goLive}>
-                      <Radio className="w-4 h-4 mr-2" />
-                      Go Live
-                    </Button>
-                  ) : (
-                    <Button variant="destructive" size="lg" onClick={endStream}>
-                      <StopCircle className="w-4 h-4 mr-2" />
-                      End Stream
-                    </Button>
-                  )}
+                  {/* Main Go Live Button */}
+                  <div className="hidden lg:block">
+                    {!isLive ? (
+                      <Button variant="hero" size="lg" onClick={goLive} disabled={!mediaStream || !isConnected}>
+                        <Radio className="w-5 h-5 mr-2" />
+                        Go Live
+                      </Button>
+                    ) : (
+                      <Button variant="destructive" size="lg" onClick={endStream}>
+                        <StopCircle className="w-5 h-5 mr-2" />
+                        End Stream
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -345,9 +339,9 @@ const GoLive = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="glass-card p-6"
+                className="glass-card p-4 md:p-6"
               >
-                <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center gap-2 mb-4">
                   <Settings className="w-5 h-5 text-primary" />
                   <h2 className="text-lg font-semibold">Stream Settings</h2>
                 </div>
@@ -380,16 +374,16 @@ const GoLive = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="glass-card p-6"
+                className="glass-card p-4 md:p-6"
               >
                 <div className="flex items-center gap-2 mb-4">
                   <Copy className="w-5 h-5 text-primary" />
                   <h2 className="text-lg font-semibold">Share Your Stream</h2>
                 </div>
                 <div className="flex gap-2">
-                  <Input value={shareUrl} readOnly className="flex-1" />
-                  <Button onClick={copyShareUrl} variant="outline">
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <Input value={shareUrl} readOnly className="flex-1 bg-secondary/50" />
+                  <Button onClick={copyShareUrl} variant="outline" size="icon">
+                    {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
@@ -404,7 +398,7 @@ const GoLive = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:w-96 h-[600px]"
+            className="lg:w-96 lg:h-[calc(100vh-150px)] h-[400px] min-h-[300px]"
           >
             {isLive ? (
               <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
@@ -421,6 +415,21 @@ const GoLive = () => {
             )}
           </motion.div>
         </div>
+      </div>
+      
+      {/* Sticky Go Live Button for Mobile */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 border-t border-border/40 backdrop-blur-xl lg:hidden pb-safe">
+        {!isLive ? (
+          <Button variant="hero" size="lg" className="w-full h-12" onClick={goLive} disabled={!mediaStream || !isConnected}>
+            <Radio className="w-5 h-5 mr-2" />
+            Go Live
+          </Button>
+        ) : (
+          <Button variant="destructive" size="lg" className="w-full h-12" onClick={endStream}>
+            <StopCircle className="w-5 h-5 mr-2" />
+            End Stream
+          </Button>
+        )}
       </div>
     </div>
   );

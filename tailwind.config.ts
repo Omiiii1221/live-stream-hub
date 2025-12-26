@@ -17,6 +17,13 @@ export default {
         "2xl": "1400px",
       },
     },
+    screens: {
+      xs: "320px",
+      sm: "480px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",

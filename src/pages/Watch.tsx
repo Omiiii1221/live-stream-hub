@@ -267,7 +267,7 @@ const Watch = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:w-96 h-[600px]"
+            className="lg:w-96 lg:h-[calc(100vh-200px)] h-[500px]"
           >
             <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
           </motion.div>
