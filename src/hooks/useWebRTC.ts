@@ -73,7 +73,13 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
         if (isHost) {
           broadcastMessage(message);
         } else {
-          setMessages((prev) => [...prev, message]);
+          // Check if this is our own message (already added when sending)
+          // If userId matches our peerId, skip adding to avoid duplicates
+          if (message.userId !== peerIdRef.current) {
+            setMessages((prev) => [...prev, message]);
+          } else {
+            console.log('[WebRTC] Skipping own message to avoid duplicate');
+          }
         }
       });
 
