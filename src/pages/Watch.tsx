@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Share2, Heart, Users, Loader2, Play, Video, VideoOff, Mic, MicOff, Monitor, Camera, X, Radio } from 'lucide-react';
+import { ArrowLeft, Share2, Heart, Users, Loader2, Play, Video, VideoOff, Mic, MicOff, Monitor, Camera, X, Radio, Check, XCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatPanel from '@/components/ChatPanel';
 import LiveBadge from '@/components/LiveBadge';
@@ -30,6 +30,7 @@ const Watch = () => {
     sendMessage, 
     viewerCount,
     viewerLocalStream,
+    otherViewerStreams,
     startViewerStream,
     stopViewerStream,
   } = useWebRTC({
@@ -37,6 +38,11 @@ const Watch = () => {
     isHost: false,
     username,
   });
+
+  // Track status of camera, mic, and screenshare
+  const [hasCamera, setHasCamera] = useState(false);
+  const [hasMic, setHasMic] = useState(false);
+  const [hasScreenShare, setHasScreenShare] = useState(false);
 
   // Connect to stream when peer is ready
   useEffect(() => {
@@ -142,9 +148,21 @@ const Watch = () => {
       viewerVideoRef.current.srcObject = viewerLocalStream;
       viewerVideoRef.current.play().catch(console.error);
       setViewerStream(viewerLocalStream);
+      
+      // Update status based on tracks
+      const hasVideo = viewerLocalStream.getVideoTracks().length > 0;
+      const hasAudio = viewerLocalStream.getAudioTracks().length > 0;
+      const isScreenShare = viewerLocalStream.getVideoTracks().some(track => track.label.includes('screen') || track.label.includes('Screen'));
+      
+      setHasCamera(hasVideo && !isScreenShare);
+      setHasScreenShare(hasVideo && isScreenShare);
+      setHasMic(hasAudio);
     } else if (!viewerLocalStream && viewerVideoRef.current) {
       viewerVideoRef.current.srcObject = null;
       setViewerStream(null);
+      setHasCamera(false);
+      setHasMic(false);
+      setHasScreenShare(false);
     }
   }, [viewerLocalStream]);
 
@@ -164,9 +182,12 @@ const Watch = () => {
       startViewerStream(stream);
       setIsViewerVideoEnabled(true);
       setIsViewerAudioEnabled(true);
+      setHasCamera(true);
+      setHasMic(true);
+      setHasScreenShare(false);
       toast({
         title: 'Camera Started',
-        description: 'Your camera is now visible to the host.',
+        description: 'Your camera is now visible to others.',
       });
     } catch (error: any) {
       console.error('[Watch] Camera error:', error);
@@ -193,10 +214,15 @@ const Watch = () => {
       startViewerStream(stream);
       setIsViewerVideoEnabled(true);
       setIsViewerAudioEnabled(true);
+      setHasScreenShare(true);
+      setHasCamera(false);
+      setHasMic(stream.getAudioTracks().length > 0);
       
       stream.getVideoTracks()[0].onended = () => {
         if (stopViewerStream) {
           stopViewerStream();
+          setHasScreenShare(false);
+          setHasMic(false);
           toast({
             title: 'Screen Share Ended',
             description: 'Screen sharing was stopped.',
@@ -206,7 +232,7 @@ const Watch = () => {
       
       toast({
         title: 'Screen Share Started',
-        description: 'Your screen is now visible to the host.',
+        description: 'Your screen is now visible to others.',
       });
     } catch (error: any) {
       console.error('[Watch] Screen share error:', error);
@@ -221,6 +247,9 @@ const Watch = () => {
   const stopViewerSharing = () => {
     if (stopViewerStream) {
       stopViewerStream();
+      setHasCamera(false);
+      setHasMic(false);
+      setHasScreenShare(false);
       toast({
         title: 'Sharing Stopped',
         description: 'You are no longer sharing your camera/screen.',
@@ -230,19 +259,28 @@ const Watch = () => {
 
   const toggleViewerVideo = () => {
     if (viewerStream) {
+      const newState = !isViewerVideoEnabled;
       viewerStream.getVideoTracks().forEach((track) => {
-        track.enabled = !isViewerVideoEnabled;
+        track.enabled = newState;
       });
-      setIsViewerVideoEnabled(!isViewerVideoEnabled);
+      setIsViewerVideoEnabled(newState);
+      if (viewerStream.getVideoTracks().length > 0) {
+        const isScreenShare = viewerStream.getVideoTracks().some(track => track.label.includes('screen') || track.label.includes('Screen'));
+        if (!isScreenShare) {
+          setHasCamera(newState);
+        }
+      }
     }
   };
 
   const toggleViewerAudio = () => {
     if (viewerStream) {
+      const newState = !isViewerAudioEnabled;
       viewerStream.getAudioTracks().forEach((track) => {
-        track.enabled = !isViewerAudioEnabled;
+        track.enabled = newState;
       });
-      setIsViewerAudioEnabled(!isViewerAudioEnabled);
+      setIsViewerAudioEnabled(newState);
+      setHasMic(newState);
     }
   };
 
@@ -406,19 +444,35 @@ const Watch = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Button 
                         onClick={startViewerCamera} 
-                        variant="outline" 
-                        className="flex flex-col items-center justify-center h-auto py-4 gap-2"
+                        variant={hasCamera ? "default" : "outline"}
+                        className="flex flex-col items-center justify-center h-auto py-4 gap-2 relative"
                       >
-                        <Camera className="w-5 h-5" />
+                        <div className="flex items-center gap-2">
+                          <Camera className="w-5 h-5" />
+                          {hasCamera ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
                         <span>Camera</span>
+                        {hasCamera && <span className="text-xs text-green-500">ON</span>}
                       </Button>
                       <Button 
                         onClick={startViewerScreenShare} 
-                        variant="outline" 
-                        className="flex flex-col items-center justify-center h-auto py-4 gap-2"
+                        variant={hasScreenShare ? "default" : "outline"}
+                        className="flex flex-col items-center justify-center h-auto py-4 gap-2 relative"
                       >
-                        <Monitor className="w-5 h-5" />
+                        <div className="flex items-center gap-2">
+                          <Monitor className="w-5 h-5" />
+                          {hasScreenShare ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
                         <span>Screen Share</span>
+                        {hasScreenShare && <span className="text-xs text-green-500">ON</span>}
                       </Button>
                       <Button 
                         onClick={async () => {
@@ -427,6 +481,9 @@ const Watch = () => {
                             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                             startViewerStream(stream);
                             setIsViewerAudioEnabled(true);
+                            setHasMic(true);
+                            setHasCamera(false);
+                            setHasScreenShare(false);
                             toast({
                               title: 'Microphone Started',
                               description: 'Your microphone is now active.',
@@ -439,11 +496,19 @@ const Watch = () => {
                             });
                           }
                         }}
-                        variant="outline" 
-                        className="flex flex-col items-center justify-center h-auto py-4 gap-2"
+                        variant={hasMic ? "default" : "outline"}
+                        className="flex flex-col items-center justify-center h-auto py-4 gap-2 relative"
                       >
-                        <Mic className="w-5 h-5" />
+                        <div className="flex items-center gap-2">
+                          <Mic className="w-5 h-5" />
+                          {hasMic ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
                         <span>Microphone</span>
+                        {hasMic && <span className="text-xs text-green-500">ON</span>}
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
@@ -452,7 +517,7 @@ const Watch = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Preview */}
+                    {/* Preview - Always show when sharing */}
                     <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                       <video
                         ref={viewerVideoRef}
@@ -461,16 +526,38 @@ const Watch = () => {
                         playsInline
                         className="w-full h-full object-contain"
                       />
-                      {viewerStream.getVideoTracks().length === 0 && (
+                      {viewerStream && viewerStream.getVideoTracks().length === 0 && (
                         <div className="absolute inset-0 flex items-center justify-center bg-background/50">
                           <Mic className="w-12 h-12 text-muted-foreground" />
+                          <span className="ml-2 text-muted-foreground">Audio Only</span>
                         </div>
                       )}
+                      {/* Status indicators */}
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {hasCamera && (
+                          <div className="bg-green-500/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-1">
+                            <Camera className="w-3 h-3" />
+                            <span>Camera ON</span>
+                          </div>
+                        )}
+                        {hasScreenShare && (
+                          <div className="bg-green-500/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-1">
+                            <Monitor className="w-3 h-3" />
+                            <span>Screen ON</span>
+                          </div>
+                        )}
+                        {hasMic && (
+                          <div className="bg-green-500/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-1">
+                            <Mic className="w-3 h-3" />
+                            <span>Mic ON</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Controls */}
                     <div className="flex items-center justify-center gap-2">
-                      {viewerStream.getVideoTracks().length > 0 && (
+                      {viewerStream && viewerStream.getVideoTracks().length > 0 && (
                         <Button
                           variant={isViewerVideoEnabled ? 'glass' : 'destructive'}
                           size="sm"
@@ -480,7 +567,7 @@ const Watch = () => {
                           {isViewerVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                         </Button>
                       )}
-                      {viewerStream.getAudioTracks().length > 0 && (
+                      {viewerStream && viewerStream.getAudioTracks().length > 0 && (
                         <Button
                           variant={isViewerAudioEnabled ? 'glass' : 'destructive'}
                           size="sm"
@@ -505,6 +592,23 @@ const Watch = () => {
             )}
           </div>
 
+          {/* Other Viewers' Streams */}
+          {otherViewerStreams && otherViewerStreams.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="glass-card p-4 mb-4"
+            >
+              <h3 className="font-semibold mb-3 text-sm">Other Viewers ({otherViewerStreams.length})</h3>
+              <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
+                {otherViewerStreams.map(({ stream, username }, index) => (
+                  <OtherViewerStreamItem key={`${username}-${index}`} stream={stream} username={username} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Chat Sidebar */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -515,6 +619,37 @@ const Watch = () => {
             <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
           </motion.div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Other Viewer Stream Component
+const OtherViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(console.error);
+    }
+  }, [stream]);
+
+  return (
+    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        className="w-full h-full object-cover"
+      />
+      {stream.getVideoTracks().length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+          <Mic className="w-8 h-8 text-muted-foreground" />
+        </div>
+      )}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+        <p className="text-xs font-medium text-white truncate">{username}</p>
       </div>
     </div>
   );
