@@ -42,7 +42,7 @@ const GoLive = () => {
   // Generate a unique stream ID for this session
   const [streamId] = useState(() => Math.random().toString(36).substr(2, 9));
 
-  const { isConnected, viewerCount, startBroadcast, stopBroadcast, messages, sendMessage } = useWebRTC({
+  const { isConnected, viewerCount, startBroadcast, stopBroadcast, messages, sendMessage, viewerStreams } = useWebRTC({
     streamId,
     isHost: true,
     username: 'Host',
@@ -430,6 +430,60 @@ const GoLive = () => {
             End Stream
           </Button>
         )}
+      </div>
+    </div>
+  );
+};
+
+// Viewer Stream Component
+const ViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(console.error);
+    }
+  }, [stream]);
+
+  return (
+    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+        <p className="text-xs font-medium text-white truncate">{username}</p>
+      </div>
+    </div>
+  );
+};
+
+// Viewer Stream Component
+const ViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(console.error);
+    }
+  }, [stream]);
+
+  return (
+    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+        <p className="text-xs font-medium text-white truncate">{username}</p>
       </div>
     </div>
   );

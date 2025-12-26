@@ -1,21 +1,39 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Share2, Heart, Users, Loader2, Play } from 'lucide-react';
+import { ArrowLeft, Share2, Heart, Users, Loader2, Play, Video, VideoOff, Mic, MicOff, Monitor, Camera, X, Radio } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatPanel from '@/components/ChatPanel';
 import LiveBadge from '@/components/LiveBadge';
 import { Button } from '@/components/ui/button';
 import { useWebRTC } from '@/hooks/useWebRTC';
+import { useToast } from '@/hooks/use-toast';
 
 const Watch = () => {
   const { streamId } = useParams();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const viewerVideoRef = useRef<HTMLVideoElement>(null);
   const [hasConnected, setHasConnected] = useState(false);
   const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
   const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
+  const [viewerStream, setViewerStream] = useState<MediaStream | null>(null);
+  const [isViewerVideoEnabled, setIsViewerVideoEnabled] = useState(true);
+  const [isViewerAudioEnabled, setIsViewerAudioEnabled] = useState(true);
+  const [hasStartedStream, setHasStartedStream] = useState(false);
+  const { toast } = useToast();
 
-  const { isConnected, remoteStream, error, connectToStream, messages, sendMessage, viewerCount } = useWebRTC({
+  const { 
+    isConnected, 
+    remoteStream, 
+    error, 
+    connectToStream, 
+    messages, 
+    sendMessage, 
+    viewerCount,
+    viewerLocalStream,
+    startViewerStream,
+    stopViewerStream,
+  } = useWebRTC({
     streamId: streamId || '',
     isHost: false,
     username,
@@ -118,6 +136,116 @@ const Watch = () => {
       };
     }
   }, [remoteStream]);
+
+  // Handle viewer's own stream preview
+  useEffect(() => {
+    if (viewerLocalStream && viewerVideoRef.current) {
+      viewerVideoRef.current.srcObject = viewerLocalStream;
+      viewerVideoRef.current.play().catch(console.error);
+      setViewerStream(viewerLocalStream);
+    } else if (!viewerLocalStream && viewerVideoRef.current) {
+      viewerVideoRef.current.srcObject = null;
+      setViewerStream(null);
+    }
+  }, [viewerLocalStream]);
+
+  const startViewerCamera = async () => {
+    try {
+      if (!startViewerStream) return;
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        },
+        audio: true,
+      });
+      
+      startViewerStream(stream);
+      setIsViewerVideoEnabled(true);
+      setIsViewerAudioEnabled(true);
+      toast({
+        title: 'Camera Started',
+        description: 'Your camera is now visible to the host.',
+      });
+    } catch (error: any) {
+      console.error('[Watch] Camera error:', error);
+      toast({
+        title: 'Camera Error',
+        description: error.message || 'Could not access camera.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const startViewerScreenShare = async () => {
+    try {
+      if (!startViewerStream) return;
+      
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: true,
+      });
+      
+      startViewerStream(stream);
+      setIsViewerVideoEnabled(true);
+      setIsViewerAudioEnabled(true);
+      
+      stream.getVideoTracks()[0].onended = () => {
+        if (stopViewerStream) {
+          stopViewerStream();
+          toast({
+            title: 'Screen Share Ended',
+            description: 'Screen sharing was stopped.',
+          });
+        }
+      };
+      
+      toast({
+        title: 'Screen Share Started',
+        description: 'Your screen is now visible to the host.',
+      });
+    } catch (error: any) {
+      console.error('[Watch] Screen share error:', error);
+      toast({
+        title: 'Screen Share Error',
+        description: error.message || 'Could not start screen sharing.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const stopViewerSharing = () => {
+    if (stopViewerStream) {
+      stopViewerStream();
+      toast({
+        title: 'Sharing Stopped',
+        description: 'You are no longer sharing your camera/screen.',
+      });
+    }
+  };
+
+  const toggleViewerVideo = () => {
+    if (viewerStream) {
+      viewerStream.getVideoTracks().forEach((track) => {
+        track.enabled = !isViewerVideoEnabled;
+      });
+      setIsViewerVideoEnabled(!isViewerVideoEnabled);
+    }
+  };
+
+  const toggleViewerAudio = () => {
+    if (viewerStream) {
+      viewerStream.getAudioTracks().forEach((track) => {
+        track.enabled = !isViewerAudioEnabled;
+      });
+      setIsViewerAudioEnabled(!isViewerAudioEnabled);
+    }
+  };
 
   if (!streamId) {
     return (
@@ -259,6 +387,110 @@ const Watch = () => {
                   </Button>
                 </div>
               </div>
+            </motion.div>
+
+            {/* Viewer Sharing Controls */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass-card p-6"
+            >
+              {!hasStartedStream ? (
+                <div className="text-center space-y-4">
+                  <h2 className="text-lg font-semibold">Join the Stream</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Click below to start streaming. You can optionally share your camera, microphone, or screen.
+                  </p>
+                  <Button 
+                    onClick={() => setHasStartedStream(true)} 
+                    variant="hero" 
+                    size="lg"
+                    className="w-full"
+                  >
+                    <Radio className="w-5 h-5 mr-2" />
+                    Start Stream
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">Your Stream</h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        stopViewerSharing();
+                        setHasStartedStream(false);
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {!viewerStream ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Choose how you want to participate (optional):
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Button onClick={startViewerCamera} variant="outline" className="flex-1">
+                          <Camera className="w-4 h-4 mr-2" />
+                          Camera
+                        </Button>
+                        <Button onClick={startViewerScreenShare} variant="outline" className="flex-1">
+                          <Monitor className="w-4 h-4 mr-2" />
+                          Screen Share
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        You can also just watch without sharing
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Preview */}
+                      <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                        <video
+                          ref={viewerVideoRef}
+                          autoPlay
+                          muted
+                          playsInline
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      
+                      {/* Controls */}
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant={isViewerVideoEnabled ? 'glass' : 'destructive'}
+                          size="sm"
+                          onClick={toggleViewerVideo}
+                          title={isViewerVideoEnabled ? 'Turn off video' : 'Turn on video'}
+                        >
+                          {isViewerVideoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant={isViewerAudioEnabled ? 'glass' : 'destructive'}
+                          size="sm"
+                          onClick={toggleViewerAudio}
+                          title={isViewerAudioEnabled ? 'Turn off microphone' : 'Turn on microphone'}
+                        >
+                          {isViewerAudioEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={stopViewerSharing}
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Stop
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </motion.div>
           </div>
 

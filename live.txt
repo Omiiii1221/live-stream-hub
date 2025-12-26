@@ -1,0 +1,2642 @@
+================================================================================
+LIVE STREAM HUB - COMPLETE PROJECT DOCUMENTATION
+================================================================================
+This document contains all code, configurations, and instructions needed to 
+recreate the entire Live Stream Hub project from scratch.
+
+PROJECT STRUCTURE:
+==================
+live-stream-hub/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── ui/ (shadcn-ui components)
+│   │   ├── Header.tsx
+│   │   ├── ChatPanel.tsx
+│   │   ├── StreamCard.tsx
+│   │   └── LiveBadge.tsx
+│   ├── pages/
+│   │   ├── Index.tsx
+│   │   ├── GoLive.tsx
+│   │   ├── Watch.tsx
+│   │   └── NotFound.tsx
+│   ├── hooks/
+│   │   ├── useWebRTC.ts
+│   │   └── use-toast.ts
+│   ├── lib/
+│   │   └── utils.ts
+│   ├── types/
+│   │   └── index.ts
+│   ├── data/
+│   │   └── mockStreams.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── tailwind.config.ts
+├── postcss.config.js
+├── vercel.json
+└── .gitignore
+
+SETUP INSTRUCTIONS:
+===================
+1. Create a new directory: mkdir live-stream-hub && cd live-stream-hub
+2. Initialize npm: npm init -y
+3. Install all dependencies (see package.json)
+4. Create all files as shown below
+5. Run: npm run dev
+6. Open: http://localhost:8080
+
+TECHNOLOGY STACK:
+=================
+- React 18.3.1
+- TypeScript 5.8.3
+- Vite 7.3.0
+- Tailwind CSS 3.4.17
+- PeerJS 1.5.5 (WebRTC)
+- React Router DOM 6.30.1
+- Framer Motion 12.23.26
+- shadcn-ui components
+- date-fns 3.6.0
+
+================================================================================
+FILE 1: package.json
+================================================================================
+
+{
+  "name": "vite_react_shadcn_ts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@radix-ui/react-accordion": "^1.2.11",
+    "@radix-ui/react-alert-dialog": "^1.1.14",
+    "@radix-ui/react-aspect-ratio": "^1.1.7",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-checkbox": "^1.3.2",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-context-menu": "^2.2.15",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-dropdown-menu": "^2.1.15",
+    "@radix-ui/react-hover-card": "^1.1.14",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-menubar": "^1.1.15",
+    "@radix-ui/react-navigation-menu": "^1.2.13",
+    "@radix-ui/react-popover": "^1.1.14",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-radio-group": "^1.3.7",
+    "@radix-ui/react-scroll-area": "^1.2.9",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slider": "^1.3.5",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.5",
+    "@radix-ui/react-tabs": "^1.1.12",
+    "@radix-ui/react-toast": "^1.2.14",
+    "@radix-ui/react-toggle": "^1.1.9",
+    "@radix-ui/react-toggle-group": "^1.1.10",
+    "@radix-ui/react-tooltip": "^1.2.7",
+    "@tanstack/react-query": "^5.83.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "date-fns": "^3.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.23.26",
+    "input-otp": "^1.4.2",
+    "lucide-react": "^0.462.0",
+    "next-themes": "^0.3.0",
+    "peerjs": "^1.5.5",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.61.1",
+    "react-resizable-panels": "^2.1.9",
+    "react-router-dom": "^6.30.1",
+    "recharts": "^2.15.4",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "vaul": "^0.9.9",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/node": "^22.16.5",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react-swc": "^3.11.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vite": "^7.3.0"
+  }
+}
+
+================================================================================
+FILE 2: vite.config.ts
+================================================================================
+
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
+  },
+  plugins: [react()].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+}));
+
+================================================================================
+FILE 3: tsconfig.json
+================================================================================
+
+{
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "noImplicitAny": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "noUnusedLocals": false,
+    "strictNullChecks": false
+  }
+}
+
+================================================================================
+FILE 4: tsconfig.app.json
+================================================================================
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "noFallthroughCasesInSwitch": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}
+
+================================================================================
+FILE 5: tsconfig.node.json
+================================================================================
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+================================================================================
+FILE 6: tailwind.config.ts
+================================================================================
+
+import type { Config } from "tailwindcss";
+
+export default {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
+  prefix: "",
+  theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+    screens: {
+      xs: "320px",
+      sm: "480px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+    },
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        live: "hsl(var(--live-red))",
+        success: "hsl(var(--success))",
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "monospace"],
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in-right": {
+          from: { opacity: "0", transform: "translateX(20px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.5s ease-out",
+        "slide-in-right": "slide-in-right 0.3s ease-out",
+        shimmer: "shimmer 2s linear infinite",
+      },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-hero": "var(--gradient-hero)",
+        "gradient-dark": "var(--gradient-dark)",
+        "gradient-card": "var(--gradient-card)",
+      },
+      boxShadow: {
+        glow: "var(--shadow-glow)",
+        card: "var(--shadow-card)",
+        live: "var(--shadow-live)",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config;
+
+================================================================================
+FILE 7: postcss.config.js
+================================================================================
+
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+================================================================================
+FILE 8: vercel.json
+================================================================================
+
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
+================================================================================
+FILE 9: .gitignore
+================================================================================
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+================================================================================
+FILE 10: index.html
+================================================================================
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LiveStream App</title>
+    <meta name="description" content="Live Stream Hub Project" />
+    <meta name="author" content="Gemini CLI" />
+    <meta property="og:title" content="Live Stream Hub" />
+    <meta property="og:description" content="Live Stream Hub Project" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+================================================================================
+FILE 11: src/main.tsx
+================================================================================
+
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(<App />);
+
+================================================================================
+FILE 12: src/App.tsx
+================================================================================
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Watch from "./pages/Watch";
+import GoLive from "./pages/GoLive";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/watch/:streamId" element={<Watch />} />
+          <Route path="/go-live" element={<GoLive />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
+
+================================================================================
+FILE 13: src/index.css
+================================================================================
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 14 100% 64%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 14 100% 64%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 14 100% 64%;
+    --radius: 0.75rem;
+    --live-red: 0 84% 60%;
+    --success: 142 76% 45%;
+    --glass: 0 0% 100% / 0.05;
+    --glass-border: 0 0% 100% / 0.1;
+    --gradient-primary: linear-gradient(135deg, hsl(14, 100%, 64%), hsl(30, 100%, 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(14, 100%, 64%), hsl(340, 80%, 55%));
+    --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 6%), hsl(0, 0%, 4%));
+    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 9%), hsl(0, 0%, 6%));
+    --shadow-glow: 0 0 60px hsl(14, 100%, 64%, 0.15);
+    --shadow-card: 0 8px 32px hsl(0, 0%, 0%, 0.4);
+    --shadow-live: 0 0 20px hsl(0, 84%, 60%, 0.5);
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 14 100% 64%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 14 100% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl;
+  }
+
+  .glass-button {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .live-badge {
+    @apply relative inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider;
+    background: hsl(var(--live-red));
+    border-radius: 4px;
+    animation: pulse-live 2s ease-in-out infinite;
+  }
+
+  .live-badge::before {
+    content: '';
+    @apply w-2 h-2 rounded-full bg-white;
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-live {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--live-red) / 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px hsl(var(--live-red) / 0);
+    }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .video-container {
+    @apply relative overflow-hidden rounded-xl bg-black;
+    aspect-ratio: 16 / 9;
+  }
+
+  .chat-container {
+    @apply flex flex-col h-full bg-card/40 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+================================================================================
+FILE 14: src/types/index.ts
+================================================================================
+
+export interface Stream {
+  id: string;
+  title: string;
+  description: string;
+  hostId: string;
+  hostName: string;
+  hostAvatar?: string;
+  status: 'scheduled' | 'live' | 'ended';
+  thumbnailUrl?: string;
+  viewerCount: number;
+  startedAt?: Date;
+  endedAt?: Date;
+  createdAt: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  streamId: string;
+  userId: string;
+  username: string;
+  message: string;
+  timestamp: Date;
+}
+
+================================================================================
+FILE 15: src/data/mockStreams.ts
+================================================================================
+
+import { Stream, ChatMessage } from '@/types';
+
+export const mockStreams: Stream[] = [
+  {
+    id: '1',
+    title: 'Building a Real-time App with WebRTC',
+    description: 'Learn how to build real-time applications using WebRTC and Socket.IO',
+    hostId: 'host1',
+    hostName: 'TechStreamDev',
+    status: 'live',
+    viewerCount: 1247,
+    startedAt: new Date(Date.now() - 1000 * 60 * 45),
+    createdAt: new Date(),
+  },
+  {
+    id: '2',
+    title: 'Late Night Coding Session - React + TypeScript',
+    description: 'Chill coding vibes with React and TypeScript projects',
+    hostId: 'host2',
+    hostName: 'CodeNinja',
+    status: 'live',
+    viewerCount: 892,
+    startedAt: new Date(Date.now() - 1000 * 60 * 120),
+    createdAt: new Date(),
+  },
+  {
+    id: '3',
+    title: 'Game Dev Stream - Unity Tutorial',
+    description: 'Creating a 2D platformer from scratch',
+    hostId: 'host3',
+    hostName: 'GameDevPro',
+    status: 'live',
+    viewerCount: 3451,
+    startedAt: new Date(Date.now() - 1000 * 60 * 30),
+    createdAt: new Date(),
+  },
+  {
+    id: '4',
+    title: 'Music Production Live',
+    description: 'Making beats and mixing tracks live',
+    hostId: 'host4',
+    hostName: 'BeatMaster',
+    status: 'live',
+    viewerCount: 567,
+    startedAt: new Date(Date.now() - 1000 * 60 * 15),
+    createdAt: new Date(),
+  },
+];
+
+================================================================================
+FILE 16: src/lib/utils.ts
+================================================================================
+
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+================================================================================
+FILE 17: src/hooks/useWebRTC.ts
+================================================================================
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import Peer, { MediaConnection, DataConnection } from 'peerjs';
+import { ChatMessage } from '@/types';
+
+interface UseWebRTCOptions {
+  streamId: string;
+  isHost: boolean;
+  username: string;
+}
+
+export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
+  const [peer, setPeer] = useState<Peer | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
+  const connectionsRef = useRef<Map<string, MediaConnection>>(new Map());
+  const dataConnectionsRef = useRef<Map<string, DataConnection>>(new Map());
+  const pendingCallsRef = useRef<Map<string, MediaConnection>>(new Map());
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const viewerCallRef = useRef<MediaConnection | null>(null);
+  const peerIdRef = useRef<string | null>(null);
+
+  const hostPeerId = `stream-host-${streamId}`;
+
+  const broadcastMessage = useCallback((message: ChatMessage) => {
+    setMessages((prev) => [...prev, message]);
+    dataConnectionsRef.current.forEach((conn) => {
+      conn.send(message);
+    });
+  }, []);
+
+  useEffect(() => {
+    const peerId = isHost ? hostPeerId : `viewer-${streamId}-${Math.random().toString(36).substr(2, 9)}`;
+    peerIdRef.current = peerId;
+    
+    console.log(`[WebRTC] Initializing peer as ${isHost ? 'HOST' : 'VIEWER'} with ID: ${peerId}`);
+    
+    const newPeer = new Peer(peerId, { debug: 2 });
+
+    newPeer.on('open', (id) => {
+      console.log(`[WebRTC] Peer connected with ID: ${id}`);
+      setIsConnected(true);
+      setPeer(newPeer);
+    });
+
+    newPeer.on('error', (err) => {
+      console.error('[WebRTC] Peer error:', err);
+      if (err.type === 'unavailable-id') {
+        setError('Stream is already being hosted');
+      } else if (err.type === 'peer-unavailable') {
+        setError('Stream not found or host is offline');
+      } else {
+        setError(err.message);
+      }
+    });
+
+    newPeer.on('disconnected', () => {
+      console.log('[WebRTC] Peer disconnected');
+      setIsConnected(false);
+    });
+    
+    // Handle incoming data connections
+    newPeer.on('connection', (conn) => {
+      console.log(`[WebRTC] Incoming data connection from ${conn.peer}`);
+      dataConnectionsRef.current.set(conn.peer, conn);
+
+      conn.on('data', (data) => {
+        const message = data as ChatMessage;
+        console.log(`[WebRTC] Received message from ${conn.peer}:`, message.message);
+        if (isHost) {
+          broadcastMessage(message);
+        } else {
+          // Check if this is our own message (already added when sending)
+          // If userId matches our peerId, skip adding to avoid duplicates
+          if (message.userId !== peerIdRef.current) {
+            setMessages((prev) => [...prev, message]);
+          } else {
+            console.log('[WebRTC] Skipping own message to avoid duplicate');
+          }
+        }
+      });
+
+      conn.on('close', () => {
+        console.log(`[WebRTC] Data connection closed with ${conn.peer}`);
+        dataConnectionsRef.current.delete(conn.peer);
+      });
+    });
+
+    if (isHost) {
+      console.log('[WebRTC] Host: Setting up call listener');
+      newPeer.on('call', (call) => {
+        console.log('[WebRTC] Incoming call from viewer:', call.peer);
+        
+        if (localStreamRef.current) {
+          // Host already has a stream, answer immediately
+          const stream = localStreamRef.current;
+          const videoTracks = stream.getVideoTracks();
+          const audioTracks = stream.getAudioTracks();
+          
+          console.log('[WebRTC] Answering call with existing stream');
+          console.log('[WebRTC] Stream details when answering:', {
+            id: stream.id,
+            active: stream.active,
+            videoTracks: videoTracks.length,
+            audioTracks: audioTracks.length,
+          });
+          
+          // Log audio track details
+          audioTracks.forEach((track, index) => {
+            console.log(`[WebRTC] Audio track ${index}:`, {
+              id: track.id,
+              enabled: track.enabled,
+              readyState: track.readyState,
+              muted: track.muted,
+            });
+            if (!track.enabled) {
+              console.log('[WebRTC] Enabling audio track');
+              track.enabled = true;
+            }
+          });
+          
+          // Create a new MediaStream with all tracks to ensure they're all transmitted
+          const answerStream = new MediaStream();
+          videoTracks.forEach(track => {
+            answerStream.addTrack(track);
+            console.log('[WebRTC] Added video track to answer stream');
+          });
+          audioTracks.forEach(track => {
+            answerStream.addTrack(track);
+            console.log('[WebRTC] Added audio track to answer stream');
+          });
+          
+          console.log('[WebRTC] Answer stream created with:', {
+            videoTracks: answerStream.getVideoTracks().length,
+            audioTracks: answerStream.getAudioTracks().length,
+            totalTracks: answerStream.getTracks().length,
+          });
+          
+          try {
+            call.answer(answerStream);
+            console.log('[WebRTC] Call answered successfully with stream containing all tracks');
+            connectionsRef.current.set(call.peer, call);
+            setViewerCount(connectionsRef.current.size);
+
+            call.on('close', () => {
+              console.log('[WebRTC] Viewer disconnected:', call.peer);
+              connectionsRef.current.delete(call.peer);
+              setViewerCount(connectionsRef.current.size);
+            });
+
+            call.on('error', (err) => {
+              console.error('[WebRTC] Call error after answering:', err);
+            });
+          } catch (error) {
+            console.error('[WebRTC] Error answering call:', error);
+          }
+        } else {
+          // Host doesn't have a stream yet, store the call for later
+          console.log('[WebRTC] Storing pending call, waiting for stream');
+          pendingCallsRef.current.set(call.peer, call);
+          
+          call.on('close', () => {
+            console.log('[WebRTC] Pending call closed:', call.peer);
+            pendingCallsRef.current.delete(call.peer);
+          });
+        }
+      });
+    }
+
+    return () => {
+      console.log('[WebRTC] Cleaning up peer');
+      connectionsRef.current.forEach((conn) => conn.close());
+      dataConnectionsRef.current.forEach((conn) => conn.close());
+      connectionsRef.current.clear();
+      dataConnectionsRef.current.clear();
+      pendingCallsRef.current.forEach((call) => call.close());
+      pendingCallsRef.current.clear();
+      if (viewerCallRef.current) {
+        viewerCallRef.current.close();
+        viewerCallRef.current = null;
+      }
+      newPeer.destroy();
+    };
+  }, [streamId, isHost, hostPeerId, broadcastMessage]);
+
+  const startBroadcast = useCallback((stream: MediaStream) => {
+    console.log('[WebRTC] Starting broadcast with stream');
+    localStreamRef.current = stream;
+    setMessages([]);
+    
+    console.log('[WebRTC] Pending calls to answer:', pendingCallsRef.current.size);
+    
+    // Answer all pending calls with the new stream
+    const videoTracks = stream.getVideoTracks();
+    const audioTracks = stream.getAudioTracks();
+    
+    pendingCallsRef.current.forEach((call, peerId) => {
+      console.log('[WebRTC] Answering pending call from viewer:', peerId);
+      
+      // Create a new MediaStream with all tracks for pending calls too
+      const answerStream = new MediaStream();
+      videoTracks.forEach(track => {
+        answerStream.addTrack(track);
+        console.log('[WebRTC] Added video track to pending call answer stream');
+      });
+      audioTracks.forEach(track => {
+        answerStream.addTrack(track);
+        console.log('[WebRTC] Added audio track to pending call answer stream');
+      });
+      
+      console.log('[WebRTC] Pending call answer stream:', {
+        videoTracks: answerStream.getVideoTracks().length,
+        audioTracks: answerStream.getAudioTracks().length,
+      });
+      
+      try {
+        console.log('[WebRTC] Answering pending call with stream containing all tracks');
+        call.answer(answerStream);
+        console.log('[WebRTC] Pending call answered successfully');
+        connectionsRef.current.set(peerId, call);
+        pendingCallsRef.current.delete(peerId);
+        
+        call.on('close', () => {
+          console.log('[WebRTC] Viewer disconnected:', peerId);
+          connectionsRef.current.delete(peerId);
+          setViewerCount(connectionsRef.current.size);
+        });
+
+        call.on('error', (err) => {
+          console.error('[WebRTC] Pending call error after answering:', err);
+        });
+      } catch (error) {
+        console.error('[WebRTC] Error answering pending call:', error);
+      }
+    });
+    
+    setViewerCount(connectionsRef.current.size);
+  }, []);
+
+  const stopBroadcast = useCallback(() => {
+    console.log('[WebRTC] Stopping broadcast');
+    if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+        localStreamRef.current = null;
+    }
+    connectionsRef.current.forEach((conn) => conn.close());
+    connectionsRef.current.clear();
+    dataConnectionsRef.current.forEach((conn) => conn.close());
+    dataConnectionsRef.current.clear();
+    pendingCallsRef.current.forEach((call) => call.close());
+    pendingCallsRef.current.clear();
+    setViewerCount(0);
+  }, []);
+
+  const connectToStream = useCallback(() => {
+    if (!peer || isHost) {
+      console.log('[WebRTC] Cannot connect: peer not ready or is host');
+      return;
+    }
+
+    if (viewerCallRef.current) {
+      console.log('[WebRTC] Closing existing call');
+      viewerCallRef.current.close();
+    }
+
+    console.log('[WebRTC] Connecting to host:', hostPeerId);
+    
+    const initiateCall = async () => {
+      // Create a dummy stream with both video and audio tracks
+      // This ensures PeerJS negotiates for both video and audio capabilities
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.fillRect(0, 0, 1, 1);
+      const dummyVideoStream = canvas.captureStream(1);
+      
+      // Create a dummy audio track using AudioContext
+      let dummyAudioStream: MediaStream;
+      try {
+        const audioContext = new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 0; // Silent
+        oscillator.connect(gainNode);
+        const destination = audioContext.createMediaStreamDestination();
+        gainNode.connect(destination);
+        oscillator.start();
+        dummyAudioStream = destination.stream;
+        // Stop oscillator after a short time
+        setTimeout(() => oscillator.stop(), 100);
+        console.log('[WebRTC] Created dummy audio track for call initiation');
+      } catch (err) {
+        console.warn('[WebRTC] Could not create dummy audio track:', err);
+        dummyAudioStream = new MediaStream();
+      }
+      
+      // Combine video and audio tracks into one stream
+      const dummyStream = new MediaStream();
+      dummyVideoStream.getVideoTracks().forEach(track => {
+        dummyStream.addTrack(track);
+        track.enabled = false; // Disable to save bandwidth
+      });
+      dummyAudioStream.getAudioTracks().forEach(track => {
+        dummyStream.addTrack(track);
+        track.enabled = false; // Disable to save bandwidth
+      });
+      
+      console.log('[WebRTC] Dummy stream for call initiation:', {
+        videoTracks: dummyStream.getVideoTracks().length,
+        audioTracks: dummyStream.getAudioTracks().length,
+      });
+      
+      const call = peer.call(hostPeerId, dummyStream);
+      
+      if (!call) {
+        console.error('[WebRTC] Failed to create call to host');
+        setError('Failed to connect to stream');
+        dummyStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
+      viewerCallRef.current = call;
+      console.log('[WebRTC] Call created, waiting for stream...');
+
+      const dataConnection = peer.connect(hostPeerId);
+      dataConnectionsRef.current.set(hostPeerId, dataConnection);
+      dataConnection.on('open', () => console.log('[WebRTC] Data connection established with host'));
+      dataConnection.on('data', (data) => setMessages((prev) => [...prev, data as ChatMessage]));
+      dataConnection.on('close', () => dataConnectionsRef.current.delete(hostPeerId));
+
+      call.on('stream', (stream) => {
+        console.log('[WebRTC] Received remote stream from host');
+        
+        const videoTracks = stream.getVideoTracks();
+        const audioTracks = stream.getAudioTracks();
+        const allTracks = stream.getTracks();
+        
+        console.log('[WebRTC] Received stream details:', {
+          id: stream.id,
+          active: stream.active,
+          videoTracks: videoTracks.length,
+          audioTracks: audioTracks.length,
+          totalTracks: allTracks.length,
+        });
+        
+        // Log all tracks
+        allTracks.forEach((track, index) => {
+          console.log(`[WebRTC] Track ${index}:`, {
+            id: track.id,
+            kind: track.kind,
+            enabled: track.enabled,
+            readyState: track.readyState,
+            muted: track.muted,
+            label: track.label,
+          });
+        });
+        
+        // Log audio tracks specifically
+        if (audioTracks.length > 0) {
+          audioTracks.forEach((track, index) => {
+            console.log(`[WebRTC] Audio track ${index} details:`, {
+              id: track.id,
+              enabled: track.enabled,
+              readyState: track.readyState,
+              muted: track.muted,
+              settings: track.getSettings(),
+            });
+            if (!track.enabled) {
+              console.log('[WebRTC] Enabling received audio track');
+              track.enabled = true;
+            }
+          });
+        } else {
+          console.error('[WebRTC] ERROR: No audio tracks in received stream!');
+        }
+        
+        dummyStream.getTracks().forEach(track => track.stop());
+        setRemoteStream(stream);
+        setError(null);
+      });
+
+      call.on('close', () => {
+        console.log('[WebRTC] Connection to host closed');
+        dummyStream.getTracks().forEach(track => track.stop());
+        setRemoteStream(null);
+        if (viewerCallRef.current === call) {
+          viewerCallRef.current = null;
+        }
+      });
+
+      call.on('error', (err) => {
+        console.error('[WebRTC] Call error:', err);
+        setError(`Connection error: ${err.message || 'Unknown error'}`);
+        if (viewerCallRef.current === call) {
+          viewerCallRef.current = null;
+        }
+      });
+    };
+    
+    initiateCall();
+  }, [peer, isHost, hostPeerId]);
+
+  const sendMessage = useCallback((messageText: string) => {
+    if (!peerIdRef.current) return;
+
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      streamId,
+      userId: peerIdRef.current,
+      username,
+      message: messageText,
+      timestamp: new Date(),
+    };
+
+    if (isHost) {
+      broadcastMessage(message);
+    } else {
+      const hostConnection = dataConnectionsRef.current.get(hostPeerId);
+      if (hostConnection) {
+        hostConnection.send(message);
+        setMessages((prev) => [...prev, message]);
+      }
+    }
+  }, [isHost, streamId, username, hostPeerId, broadcastMessage]);
+
+  return {
+    peer,
+    isConnected,
+    viewerCount,
+    remoteStream,
+    messages,
+    error,
+    startBroadcast,
+    stopBroadcast,
+    connectToStream,
+    sendMessage,
+  };
+};
+
+================================================================================
+FILE 18: src/hooks/use-toast.ts
+================================================================================
+
+import * as React from "react";
+
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+
+const TOAST_LIMIT = 1;
+const TOAST_REMOVE_DELAY = 1000000;
+
+type ToasterToast = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
+};
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const;
+
+let count = 0;
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER;
+  return count.toString();
+}
+
+type ActionType = typeof actionTypes;
+
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"];
+      toast: ToasterToast;
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"];
+      toast: Partial<ToasterToast>;
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"];
+      toastId?: ToasterToast["id"];
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"];
+      toastId?: ToasterToast["id"];
+    };
+
+interface State {
+  toasts: ToasterToast[];
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return;
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId);
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    });
+  }, TOAST_REMOVE_DELAY);
+
+  toastTimeouts.set(toastId, timeout);
+};
+
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      };
+
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
+      };
+
+    case "DISMISS_TOAST": {
+      const { toastId } = action;
+
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
+      // but I'll keep it here for simplicity
+      if (toastId) {
+        addToRemoveQueue(toastId);
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id);
+        });
+      }
+
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t,
+        ),
+      };
+    }
+    case "REMOVE_TOAST":
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        };
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      };
+  }
+};
+
+const listeners: Array<(state: State) => void> = [];
+
+let memoryState: State = { toasts: [] };
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action);
+  listeners.forEach((listener) => {
+    listener(memoryState);
+  });
+}
+
+type Toast = Omit<ToasterToast, "id">;
+
+function toast({ ...props }: Toast) {
+  const id = genId();
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    });
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss();
+      },
+    },
+  });
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  };
+}
+
+function useToast() {
+  const [state, setState] = React.useState<State>(memoryState);
+
+  React.useEffect(() => {
+    listeners.push(setState);
+    return () => {
+      const index = listeners.indexOf(setState);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }, [state]);
+
+  return {
+    ...state,
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+  };
+}
+
+export { useToast, toast };
+
+================================================================================
+FILE 19: src/pages/Index.tsx
+================================================================================
+
+import { motion } from 'framer-motion';
+import { Flame, TrendingUp } from 'lucide-react';
+import Header from '@/components/Header';
+import StreamCard from '@/components/StreamCard';
+import { mockStreams } from '@/data/mockStreams';
+
+const Index = () => {
+  const liveStreams = mockStreams.filter((s) => s.status === 'live');
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container py-8">
+        {/* Hero Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12"
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-background to-purple-600/20 border border-white/10 p-8 md:p-12">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
+            
+            <div className="relative z-10">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center gap-2 mb-4"
+              >
+                <div className="live-badge">
+                  {liveStreams.length} LIVE NOW
+                </div>
+              </motion.div>
+              
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-3xl md:text-5xl font-bold mb-4"
+              >
+                Watch <span className="gradient-text">Live Streams</span>
+                <br />& Connect in Real-Time
+              </motion.h1>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="text-lg text-muted-foreground max-w-lg"
+              >
+                Join thousands of viewers watching live content from creators around the world.
+                Start streaming or watch your favorite hosts.
+              </motion.p>
+            </div>
+
+            {/* Decorative elements */}
+            <motion.div
+              className="absolute -top-20 -right-20 w-64 h-64 bg-primary/30 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            />
+          </div>
+        </motion.section>
+
+        {/* Live Streams Section */}
+        <section>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 text-xl font-semibold">
+              <Flame className="w-6 h-6 text-primary" />
+              <h2>Live Now</h2>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {liveStreams.map((stream, index) => (
+              <StreamCard key={stream.id} stream={stream} index={index} />
+            ))}
+          </div>
+
+          {liveStreams.length === 0 && (
+            <div className="text-center py-16">
+              <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No live streams right now</h3>
+              <p className="text-muted-foreground">Check back later or start your own stream!</p>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+};
+
+export default Index;
+
+================================================================================
+FILE 20: src/pages/GoLive.tsx
+================================================================================
+
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Video,
+  VideoOff,
+  Mic,
+  MicOff,
+  Monitor,
+  Camera,
+  Settings,
+  Radio,
+  Users,
+  MessageSquare,
+  StopCircle,
+  Copy,
+  Check,
+} from 'lucide-react';
+import Header from '@/components/Header';
+import ChatPanel from '@/components/ChatPanel';
+import LiveBadge from '@/components/LiveBadge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useWebRTC } from '@/hooks/useWebRTC';
+
+const GoLive = () => {
+  const { toast } = useToast();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const [isLive, setIsLive] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [sourceType, setSourceType] = useState<'camera' | 'screen'>('camera');
+  const [streamDuration, setStreamDuration] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  // Generate a unique stream ID for this session
+  const [streamId] = useState(() => Math.random().toString(36).substr(2, 9));
+
+  const { isConnected, viewerCount, startBroadcast, stopBroadcast, messages, sendMessage } = useWebRTC({
+    streamId,
+    isHost: true,
+    username: 'Host',
+  });
+
+  const shareUrl = `${window.location.origin}/watch/${streamId}`;
+
+  // Stream duration timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLive) {
+      interval = setInterval(() => {
+        setStreamDuration((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isLive]);
+
+  // Update video element when mediaStream changes
+  useEffect(() => {
+    if (mediaStream && videoRef.current) {
+      console.log('[GoLive] Updating video element with stream');
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch((err) => {
+        console.error('[GoLive] Error playing video in useEffect:', err);
+      });
+    }
+  }, [mediaStream]);
+
+  const formatDuration = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs
+      .toString()
+      .padStart(2, '0')}`;
+  };
+
+  const startCamera = async () => {
+    try {
+      console.log('[GoLive] Requesting camera access...');
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        },
+        audio: true,
+      });
+      console.log('[GoLive] Camera access granted, stream obtained:', stream);
+      console.log('[GoLive] Video tracks:', stream.getVideoTracks().length);
+      console.log('[GoLive] Audio tracks:', stream.getAudioTracks().length);
+      
+      setMediaStream(stream);
+      
+      setSourceType('camera');
+      setIsVideoEnabled(true);
+      setIsAudioEnabled(true);
+    } catch (error: any) {
+      console.error('[GoLive] Camera error:', error);
+      toast({
+        title: 'Camera Error',
+        description: error.message || 'Could not access camera. Please check permissions.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const startScreenShare = async () => {
+    try {
+      console.log('[GoLive] Requesting screen share access...');
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: true,
+      });
+      console.log('[GoLive] Screen share access granted, stream obtained:', stream);
+      console.log('[GoLive] Video tracks:', stream.getVideoTracks().length);
+      console.log('[GoLive] Audio tracks:', stream.getAudioTracks().length);
+      
+      setMediaStream(stream);
+      setSourceType('screen');
+      setIsVideoEnabled(true);
+      setIsAudioEnabled(true);
+      
+      // Handle when user stops sharing
+      stream.getVideoTracks()[0].onended = () => {
+        console.log('[GoLive] Screen share ended by user');
+        setMediaStream(null);
+        toast({
+          title: 'Screen Share Ended',
+          description: 'Screen sharing was stopped.',
+        });
+      };
+    } catch (error: any) {
+      console.error('[GoLive] Screen share error:', error);
+      toast({
+        title: 'Screen Share Error',
+        description: error.message || 'Could not start screen sharing.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleVideo = () => {
+    if (mediaStream) {
+      mediaStream.getVideoTracks().forEach((track) => {
+        track.enabled = !isVideoEnabled;
+      });
+      setIsVideoEnabled(!isVideoEnabled);
+    }
+  };
+
+  const toggleAudio = () => {
+    if (mediaStream) {
+      mediaStream.getAudioTracks().forEach((track) => {
+        track.enabled = !isAudioEnabled;
+      });
+      setIsAudioEnabled(!isAudioEnabled);
+    }
+  };
+
+  const goLive = () => {
+    if (!title.trim()) {
+      toast({
+        title: 'Missing Title',
+        description: 'Please enter a stream title before going live.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!mediaStream) {
+      toast({
+        title: 'No Media',
+        description: 'Please start your camera or screen share first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!isConnected) {
+      toast({
+        title: 'Not Connected',
+        description: 'Waiting for WebRTC connection. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    startBroadcast(mediaStream);
+    setIsLive(true);
+    toast({
+      title: "You're Live!",
+      description: 'Share the link for viewers to join.',
+    });
+  };
+
+  const endStream = () => {
+    stopBroadcast();
+    setIsLive(false);
+    setStreamDuration(0);
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      setMediaStream(null);
+    }
+    toast({
+      title: 'Stream Ended',
+      description: 'Your stream has been ended.',
+    });
+  };
+
+  const copyShareUrl = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    toast({ title: 'Link Copied!', description: 'Share it with your viewers.' });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-24 lg:pb-0">
+      <Header />
+
+      <div className="container py-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Main Content */}
+          <div className="flex-1 space-y-4">
+            {/* Preview */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card overflow-hidden"
+            >
+              <div className="video-container relative bg-background/50 aspect-video">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className={`absolute inset-0 w-full h-full object-contain ${
+                    mediaStream ? 'block' : 'hidden'
+                  }`}
+                />
+                {!mediaStream && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                    <div className="text-4xl md:text-6xl opacity-30">📷</div>
+                    <p className="text-muted-foreground text-sm">
+                      Select a video source to preview
+                    </p>
+                    <div className="flex gap-3 mt-2">
+                      <Button onClick={startCamera} variant="outline" size="sm">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Camera
+                      </Button>
+                      <Button onClick={startScreenShare} variant="outline" size="sm">
+                        <Monitor className="w-4 h-4 mr-2" />
+                        Screen
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {isLive && (
+                  <>
+                    <div className="absolute top-2 left-2 md:top-4 md:left-4">
+                      <LiveBadge />
+                    </div>
+                    <div className="absolute top-2 right-2 md:top-4 md:right-4 flex items-center gap-2">
+                      <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-lg">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span className="font-medium text-sm">{viewerCount}</span>
+                      </div>
+                      <div className="bg-background/80 backdrop-blur-sm px-2 py-1 rounded-lg font-mono text-xs md:text-sm">
+                        {formatDuration(streamDuration)}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div className="p-3 md:p-4 border-t border-border/40">
+                <div className="flex flex-wrap items-center justify-center md:justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={isVideoEnabled ? 'glass' : 'destructive'}
+                      size="lg"
+                      onClick={toggleVideo}
+                      disabled={!mediaStream}
+                      className="h-11 w-11 md:h-10 md:w-auto md:px-4 md:py-2"
+                    >
+                      {isVideoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                      <span className="sr-only md:not-sr-only md:ml-2">Video</span>
+                    </Button>
+                    <Button
+                      variant={isAudioEnabled ? 'glass' : 'destructive'}
+                      size="lg"
+                      onClick={toggleAudio}
+                      disabled={!mediaStream}
+                      className="h-11 w-11 md:h-10 md:w-auto md:px-4 md:py-2"
+                    >
+                      {isAudioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                      <span className="sr-only md:not-sr-only md:ml-2">Audio</span>
+                    </Button>
+                  </div>
+
+                  {/* Main Go Live Button */}
+                  <div className="hidden lg:block">
+                    {!isLive ? (
+                      <Button variant="hero" size="lg" onClick={goLive} disabled={!mediaStream || !isConnected}>
+                        <Radio className="w-5 h-5 mr-2" />
+                        Go Live
+                      </Button>
+                    ) : (
+                      <Button variant="destructive" size="lg" onClick={endStream}>
+                        <StopCircle className="w-5 h-5 mr-2" />
+                        End Stream
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Stream Settings / Share Link */}
+            {!isLive ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="glass-card p-4 md:p-6"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Settings className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Stream Settings</h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Stream Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="What are you streaming today?"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description (optional)</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Tell viewers what to expect..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="glass-card p-4 md:p-6"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Copy className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Share Your Stream</h2>
+                </div>
+                <div className="flex gap-2">
+                  <Input value={shareUrl} readOnly className="flex-1 bg-secondary/50" />
+                  <Button onClick={copyShareUrl} variant="outline" size="icon">
+                    {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Share this link with viewers to let them watch your stream.
+                </p>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Chat Sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="lg:w-96 lg:h-[calc(100vh-150px)] h-[400px] min-h-[300px]"
+          >
+            {isLive ? (
+              <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
+            ) : (
+              <div className="chat-container h-full flex items-center justify-center text-center p-6">
+                <div>
+                  <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-medium mb-2">Chat Preview</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Chat will appear here once you go live
+                  </p>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </div>
+      
+      {/* Sticky Go Live Button for Mobile */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 border-t border-border/40 backdrop-blur-xl lg:hidden pb-safe">
+        {!isLive ? (
+          <Button variant="hero" size="lg" className="w-full h-12" onClick={goLive} disabled={!mediaStream || !isConnected}>
+            <Radio className="w-5 h-5 mr-2" />
+            Go Live
+          </Button>
+        ) : (
+          <Button variant="destructive" size="lg" className="w-full h-12" onClick={endStream}>
+            <StopCircle className="w-5 h-5 mr-2" />
+            End Stream
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default GoLive;
+
+================================================================================
+FILE 21: src/pages/Watch.tsx
+================================================================================
+
+import { useParams, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Share2, Heart, Users, Loader2, Play } from 'lucide-react';
+import Header from '@/components/Header';
+import ChatPanel from '@/components/ChatPanel';
+import LiveBadge from '@/components/LiveBadge';
+import { Button } from '@/components/ui/button';
+import { useWebRTC } from '@/hooks/useWebRTC';
+
+const Watch = () => {
+  const { streamId } = useParams();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasConnected, setHasConnected] = useState(false);
+  const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
+  const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
+
+  const { isConnected, remoteStream, error, connectToStream, messages, sendMessage, viewerCount } = useWebRTC({
+    streamId: streamId || '',
+    isHost: false,
+    username,
+  });
+
+  // Connect to stream when peer is ready
+  useEffect(() => {
+    if (isConnected && !hasConnected) {
+      console.log('[Watch] Peer connected, connecting to stream...');
+      connectToStream();
+      setHasConnected(true);
+    }
+  }, [isConnected, hasConnected, connectToStream]);
+
+  // Attach remote stream to video element
+  useEffect(() => {
+    if (remoteStream && videoRef.current) {
+      console.log('[Watch] Attaching remote stream to video element');
+      console.log('[Watch] Stream details:', {
+        id: remoteStream.id,
+        active: remoteStream.active,
+        videoTracks: remoteStream.getVideoTracks().length,
+        audioTracks: remoteStream.getAudioTracks().length,
+      });
+      
+      // Check video tracks
+      const videoTracks = remoteStream.getVideoTracks();
+      if (videoTracks.length === 0) {
+        console.error('[Watch] No video tracks in stream!');
+        return;
+      }
+      
+      console.log('[Watch] Video track details:', {
+        enabled: videoTracks[0].enabled,
+        readyState: videoTracks[0].readyState,
+        settings: videoTracks[0].getSettings(),
+      });
+      
+      // Check audio tracks
+      const audioTracks = remoteStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        console.log('[Watch] Audio track details:', {
+          enabled: audioTracks[0].enabled,
+          readyState: audioTracks[0].readyState,
+          muted: audioTracks[0].muted,
+          settings: audioTracks[0].getSettings(),
+        });
+        // Ensure audio track is enabled
+        if (!audioTracks[0].enabled) {
+          console.log('[Watch] Enabling audio track');
+          audioTracks[0].enabled = true;
+        }
+      } else {
+        console.warn('[Watch] No audio tracks in stream!');
+      }
+      
+      videoRef.current.srcObject = remoteStream;
+      
+      // Ensure video is not muted to hear audio
+      videoRef.current.muted = false;
+      
+      // Explicitly play the video
+      videoRef.current.play()
+        .then(() => {
+          console.log('[Watch] Video playback started successfully');
+          setNeedsUserInteraction(false);
+        })
+        .catch((err) => {
+          console.error('[Watch] Error playing video:', err);
+          // If autoplay is blocked, show play button
+          if (err.name === 'NotAllowedError') {
+            console.log('[Watch] Autoplay blocked, user interaction required');
+            setNeedsUserInteraction(true);
+          } else {
+            // Try to play with user interaction
+            videoRef.current?.play().catch((err2) => {
+              console.error('[Watch] Failed to play video even after retry:', err2);
+              if (err2.name === 'NotAllowedError') {
+                setNeedsUserInteraction(true);
+              }
+            });
+          }
+        });
+      
+      // Log when video starts playing
+      videoRef.current.onloadedmetadata = () => {
+        console.log('[Watch] Video metadata loaded');
+        console.log('[Watch] Video dimensions:', {
+          videoWidth: videoRef.current?.videoWidth,
+          videoHeight: videoRef.current?.videoHeight,
+        });
+      };
+      
+      videoRef.current.onplay = () => {
+        console.log('[Watch] Video started playing');
+      };
+      
+      videoRef.current.onerror = (err) => {
+        console.error('[Watch] Video element error:', err);
+      };
+    }
+  }, [remoteStream]);
+
+  if (!streamId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Invalid stream link</h1>
+          <Button asChild>
+            <Link to="/">Go back home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <div className="container py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Video Player */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="video-container mb-4 relative"
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className={`absolute inset-0 w-full h-full object-cover bg-black ${remoteStream ? 'block' : 'hidden'}`}
+              />
+              {!remoteStream && (
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-purple-600/10 flex items-center justify-center">
+                  <div className="text-center">
+                    {error ? (
+                      <>
+                        <div className="text-6xl mb-4">📺</div>
+                        <p className="text-destructive font-medium mb-2">{error}</p>
+                        <p className="text-sm text-muted-foreground">
+                          The host may not be live yet. Try refreshing.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          onClick={() => window.location.reload()}
+                        >
+                          Refresh
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Connecting to stream...</p>
+                        <p className="text-sm text-muted-foreground/60 mt-1">
+                          Waiting for the host to go live
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {remoteStream && (
+                <>
+                  <div className="absolute top-4 left-4">
+                    <LiveBadge size="lg" />
+                  </div>
+                  {needsUserInteraction && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                      <Button
+                        size="lg"
+                        onClick={() => {
+                          videoRef.current?.play()
+                            .then(() => {
+                              console.log('[Watch] Video playback started after user interaction');
+                              setNeedsUserInteraction(false);
+                            })
+                            .catch((err) => {
+                              console.error('[Watch] Error playing video after click:', err);
+                            });
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="w-5 h-5" />
+                        Play Stream
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </motion.div>
+
+            {/* Stream Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="glass-card p-6"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex gap-4">
+                  {/* Host Avatar */}
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-orange-400 flex items-center justify-center text-primary-foreground font-bold text-xl flex-shrink-0">
+                    H
+                  </div>
+
+                  <div>
+                    <h1 className="text-xl font-bold mb-1">
+                      {remoteStream ? 'Live Stream' : 'Waiting for stream...'}
+                    </h1>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">Host</span>
+                      <span>•</span>
+                      <span>Stream ID: {streamId}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{viewerCount}</span>
+                      </div>
+                  <Button variant="glass" size="icon">
+                    <Heart className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="glass"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                    }}
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Chat Sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="lg:w-96 lg:h-[calc(100vh-200px)] h-[500px]"
+          >
+            <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Watch;
+
+================================================================================
+FILE 22: src/pages/NotFound.tsx
+================================================================================
+
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
+
+const NotFound = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+  }, [location.pathname]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted">
+      <div className="text-center">
+        <h1 className="mb-4 text-4xl font-bold">404</h1>
+        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
+        <a href="/" className="text-primary underline hover:text-primary/90">
+          Return to Home
+        </a>
+      </div>
+    </div>
+  );
+};
+
+export default NotFound;
+
+================================================================================
+FILE 23: src/components/Header.tsx
+================================================================================
+
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Radio, Video, Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+
+const Header: React.FC = () => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  return (
+    <motion.header
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl pt-safe"
+    >
+      <div className="container flex h-14 items-center justify-between gap-4">
+        {/* Logo */}
+        <Link
+          to="/"
+          className={`flex items-center gap-2 group ${
+            isSearchOpen ? 'hidden sm:flex' : 'flex'
+          }`}
+        >
+          <div className="relative">
+            <Radio className="w-7 h-7 md:w-8 md:h-8 text-primary" />
+            <motion.div
+              className="absolute inset-0 bg-primary/30 rounded-full blur-xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </div>
+          <span className="text-lg md:text-xl font-bold gradient-text">Streamify</span>
+        </Link>
+
+        {/* Search */}
+        <div
+          className={`absolute sm:relative left-0 right-0 top-0 px-4 sm:px-0 sm:top-auto sm:flex-1 sm:mx-auto ${
+            isSearchOpen ? 'block bg-background/95 h-full' : 'hidden'
+          } md:block`}
+        >
+          <div className="relative w-full max-w-md mx-auto h-full flex items-center">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search streams..."
+              className="pl-10 bg-secondary/30 w-full"
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+          >
+            {isSearchOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Search className="w-5 h-5" />
+            )}
+          </Button>
+          <div
+            className={`${
+              isSearchOpen ? 'hidden sm:flex' : 'flex'
+            } items-center gap-2`}
+          >
+            <Button variant="hero" size="sm" asChild>
+              <Link to="/go-live">
+                <Video className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Go Live</span>
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </motion.header>
+  );
+};
+
+export default Header;
+
+================================================================================
+FILE 24: src/components/ChatPanel.tsx
+================================================================================
+
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ChatMessage } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
+
+interface ChatPanelProps {
+  messages: ChatMessage[];
+  viewerCount: number;
+  sendMessage: (message: string) => void;
+}
+
+const ChatPanel: React.FC<ChatPanelProps> = ({ messages, viewerCount, sendMessage }) => {
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    sendMessage(newMessage.trim());
+    setNewMessage('');
+  };
+
+  return (
+    <div className="chat-container h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between p-3 md:p-4 border-b border-border/40">
+        <h3 className="font-semibold text-sm md:text-base">Live Chat</h3>
+        <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
+          <Users className="w-4 h-4" />
+          <span>{viewerCount.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
+        <AnimatePresence mode="popLayout">
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="group"
+            >
+              <div className="flex gap-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/60 to-orange-400/60 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {msg.username.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-medium text-xs md:text-sm text-primary">{msg.username}</span>
+                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                      {formatDistanceToNow(new Date(msg.timestamp))} ago
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground/90 break-words">{msg.message}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="p-3 md:p-4 border-t border-border/40">
+        <form onSubmit={handleSend} className="flex gap-2">
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Send a message..."
+            className="flex-1 h-9"
+          />
+          <Button type="submit" size="icon" className="h-9 w-9" disabled={!newMessage.trim()}>
+            <Send className="w-4 h-4" />
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ChatPanel;
+
+================================================================================
+FILE 25: src/components/StreamCard.tsx
+================================================================================
+
+import { motion } from 'framer-motion';
+import { Users, Clock } from 'lucide-react';
+import { Stream } from '@/types';
+import LiveBadge from './LiveBadge';
+import { formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router-dom';
+
+interface StreamCardProps {
+  stream: Stream;
+  index: number;
+}
+
+const StreamCard: React.FC<StreamCardProps> = ({ stream, index }) => {
+  const formatViewerCount = (count: number) => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.4 }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+    >
+      <Link to={`/watch/${stream.id}`} className="block group">
+        <div className="glass-card overflow-hidden shadow-card hover:shadow-glow transition-all duration-300">
+          {/* Thumbnail */}
+          <div className="video-container relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-600/20 flex items-center justify-center">
+              <div className="text-6xl opacity-50">📺</div>
+            </div>
+            
+            {/* Overlays */}
+            <div className="absolute top-3 left-3">
+              <LiveBadge />
+            </div>
+            
+            <div className="absolute bottom-3 left-3 flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-md text-xs">
+                <Users className="w-3 h-3 text-primary" />
+                <span className="font-medium">{formatViewerCount(stream.viewerCount)}</span>
+              </div>
+            </div>
+
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+
+          {/* Info */}
+          <div className="p-3 md:p-4">
+            <div className="flex gap-3">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-400 flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0">
+                {stream.hostName.charAt(0).toUpperCase()}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm md:text-base text-foreground truncate group-hover:text-primary transition-colors">
+                  {stream.title}
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">{stream.hostName}</p>
+                {stream.startedAt && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <Clock className="w-3 h-3" />
+                    <span>Started {formatDistanceToNow(stream.startedAt)} ago</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
+
+export default StreamCard;
+
+================================================================================
+FILE 26: src/components/LiveBadge.tsx
+================================================================================
+
+import { motion } from 'framer-motion';
+
+interface LiveBadgeProps {
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const LiveBadge: React.FC<LiveBadgeProps> = ({ size = 'md' }) => {
+  const sizeClasses = {
+    sm: 'text-[10px] px-1.5 py-0.5',
+    md: 'text-xs px-2 py-0.5',
+    lg: 'text-sm px-3 py-1',
+  };
+
+  return (
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={`live-badge ${sizeClasses[size]}`}
+    >
+      LIVE
+    </motion.div>
+  );
+};
+
+export default LiveBadge;
+
+================================================================================
+FILE 27: src/components/ui/button.tsx
+================================================================================
+
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02]",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        glass:
+          "bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-foreground",
+        live: "bg-live text-foreground hover:bg-live/90 shadow-live",
+        hero: "bg-gradient-to-r from-primary to-orange-400 text-primary-foreground font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-[1.02]",
+        success: "bg-success text-foreground hover:bg-success/90",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-12 rounded-lg px-8 text-base",
+        xl: "h-14 rounded-xl px-10 text-lg",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+
+================================================================================
+FILE 28: src/lib/utils.ts
+================================================================================
+
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+================================================================================
+IMPORTANT NOTES:
+================
+
+1. SHADCN-UI COMPONENTS:
+   You need to install shadcn-ui components. The project uses many components from
+   @/components/ui/. You can either:
+   - Copy all UI components from a shadcn-ui setup
+   - Or install them using: npx shadcn@latest add [component-name]
+   
+   Required UI components:
+   - button, input, label, textarea, toast, toaster, tooltip, sonner
+   - And any others imported in the code
+
+2. PEERJS:
+   The project uses PeerJS for WebRTC. It uses the default PeerJS server.
+   For production, consider setting up your own PeerJS server.
+
+3. DEPLOYMENT:
+   - Configured for Vercel (vercel.json included)
+   - Build command: npm run build
+   - Output directory: dist
+
+4. PORT:
+   Development server runs on port 8080 (configured in vite.config.ts)
+
+5. DUPLICATE MESSAGE FIX:
+   The useWebRTC hook includes a fix to prevent duplicate messages on viewer side
+   by checking if message.userId matches peerIdRef.current before adding.
+
+6. AUDIO/VIDEO STREAMING:
+   The implementation includes:
+   - Dummy stream creation for call initiation (viewer side)
+   - Proper track handling for both video and audio
+   - Pending call management when host hasn't started streaming yet
+   - Audio track enabling on both host and viewer sides
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
+

@@ -15,6 +15,10 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // For host: store viewer streams
+  const [viewerStreams, setViewerStreams] = useState<Map<string, { stream: MediaStream; username: string }>>(new Map());
+  // For viewer: their own local stream when sharing
+  const [viewerLocalStream, setViewerLocalStream] = useState<MediaStream | null>(null);
   
   const connectionsRef = useRef<Map<string, MediaConnection>>(new Map());
   const dataConnectionsRef = useRef<Map<string, DataConnection>>(new Map());
@@ -22,6 +26,12 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
   const localStreamRef = useRef<MediaStream | null>(null);
   const viewerCallRef = useRef<MediaConnection | null>(null);
   const peerIdRef = useRef<string | null>(null);
+  // For viewer: call to host when sharing their stream
+  const viewerToHostCallRef = useRef<MediaConnection | null>(null);
+  // For host: calls from viewers sharing their streams
+  const viewerCallsRef = useRef<Map<string, MediaConnection>>(new Map());
+  // Store usernames by peer ID
+  const peerUsernamesRef = useRef<Map<string, string>>(new Map());
 
   const hostPeerId = `stream-host-${streamId}`;
 
@@ -70,6 +80,12 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       conn.on('data', (data) => {
         const message = data as ChatMessage;
         console.log(`[WebRTC] Received message from ${conn.peer}:`, message.message);
+        
+        // Store username for this peer
+        if (message.username) {
+          peerUsernamesRef.current.set(conn.peer, message.username);
+        }
+        
         if (isHost) {
           broadcastMessage(message);
         } else {
@@ -86,6 +102,7 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       conn.on('close', () => {
         console.log(`[WebRTC] Data connection closed with ${conn.peer}`);
         dataConnectionsRef.current.delete(conn.peer);
+        peerUsernamesRef.current.delete(conn.peer);
       });
     });
 
@@ -94,6 +111,36 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       newPeer.on('call', (call) => {
         console.log('[WebRTC] Incoming call from viewer:', call.peer);
         
+        // Check if this is a viewer sharing their stream (they send a stream)
+        // Listen for stream from viewer - if we receive one, it means viewer is sharing
+        call.on('stream', (incomingStream) => {
+          console.log('[WebRTC] Host received stream from viewer:', call.peer);
+          // This is a viewer sharing their stream
+          // Get username from stored usernames or use default
+          const viewerUsername = peerUsernamesRef.current.get(call.peer) || `Viewer-${call.peer.substring(0, 8)}`;
+          setViewerStreams((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(call.peer, { stream: incomingStream, username: viewerUsername });
+            return newMap;
+          });
+          viewerCallsRef.current.set(call.peer, call);
+          
+          // Track when this stream ends
+          incomingStream.getTracks().forEach(track => {
+            track.onended = () => {
+              console.log('[WebRTC] Viewer stream track ended:', call.peer);
+              setViewerStreams((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(call.peer);
+                return newMap;
+              });
+              viewerCallsRef.current.delete(call.peer);
+            };
+          });
+        });
+        
+        // Answer the call - if viewer is sharing, we still need to answer
+        // If viewer wants to receive, we answer with our stream
         if (localStreamRef.current) {
           // Host already has a stream, answer immediately
           const stream = localStreamRef.current;
@@ -150,6 +197,13 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
               console.log('[WebRTC] Viewer disconnected:', call.peer);
               connectionsRef.current.delete(call.peer);
               setViewerCount(connectionsRef.current.size);
+              // Also remove from viewer streams if it was there
+              setViewerStreams((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(call.peer);
+                return newMap;
+              });
+              viewerCallsRef.current.delete(call.peer);
             });
 
             call.on('error', (err) => {
@@ -159,14 +213,33 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
             console.error('[WebRTC] Error answering call:', error);
           }
         } else {
-          // Host doesn't have a stream yet, store the call for later
-          console.log('[WebRTC] Storing pending call, waiting for stream');
-          pendingCallsRef.current.set(call.peer, call);
+          // Host doesn't have a stream yet, answer with dummy stream to accept viewer's stream
+          console.log('[WebRTC] Host has no stream, answering with dummy stream to accept viewer stream');
+          const canvas = document.createElement('canvas');
+          canvas.width = 1;
+          canvas.height = 1;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.fillRect(0, 0, 1, 1);
+          const dummyStream = canvas.captureStream(0);
           
-          call.on('close', () => {
-            console.log('[WebRTC] Pending call closed:', call.peer);
-            pendingCallsRef.current.delete(call.peer);
-          });
+          try {
+            call.answer(dummyStream);
+            console.log('[WebRTC] Answered call with dummy stream to receive viewer stream');
+            connectionsRef.current.set(call.peer, call);
+            
+            call.on('close', () => {
+              console.log('[WebRTC] Viewer disconnected:', call.peer);
+              connectionsRef.current.delete(call.peer);
+              setViewerStreams((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(call.peer);
+                return newMap;
+              });
+              viewerCallsRef.current.delete(call.peer);
+            });
+          } catch (error) {
+            console.error('[WebRTC] Error answering call with dummy stream:', error);
+          }
         }
       });
     }
@@ -179,9 +252,18 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       dataConnectionsRef.current.clear();
       pendingCallsRef.current.forEach((call) => call.close());
       pendingCallsRef.current.clear();
+      viewerCallsRef.current.forEach((call) => call.close());
+      viewerCallsRef.current.clear();
       if (viewerCallRef.current) {
         viewerCallRef.current.close();
         viewerCallRef.current = null;
+      }
+      if (viewerToHostCallRef.current) {
+        viewerToHostCallRef.current.close();
+        viewerToHostCallRef.current = null;
+      }
+      if (viewerLocalStream) {
+        viewerLocalStream.getTracks().forEach(track => track.stop());
       }
       newPeer.destroy();
     };
@@ -428,6 +510,61 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
     }
   }, [isHost, streamId, username, hostPeerId, broadcastMessage]);
 
+  // Viewer functions to share their stream
+  const startViewerStream = useCallback(async (stream: MediaStream) => {
+    if (!peer || isHost) {
+      console.log('[WebRTC] Cannot start viewer stream: peer not ready or is host');
+      return;
+    }
+
+    console.log('[WebRTC] Viewer starting to share stream to host');
+    setViewerLocalStream(stream);
+    
+    if (viewerToHostCallRef.current) {
+      console.log('[WebRTC] Closing existing viewer-to-host call');
+      viewerToHostCallRef.current.close();
+    }
+
+    try {
+      const call = peer.call(hostPeerId, stream);
+      if (!call) {
+        console.error('[WebRTC] Failed to create call to host for viewer stream');
+        return;
+      }
+
+      viewerToHostCallRef.current = call;
+      console.log('[WebRTC] Viewer call to host created for stream sharing');
+
+      call.on('close', () => {
+        console.log('[WebRTC] Viewer-to-host call closed');
+        if (viewerToHostCallRef.current === call) {
+          viewerToHostCallRef.current = null;
+        }
+      });
+
+      call.on('error', (err) => {
+        console.error('[WebRTC] Viewer-to-host call error:', err);
+        if (viewerToHostCallRef.current === call) {
+          viewerToHostCallRef.current = null;
+        }
+      });
+    } catch (error) {
+      console.error('[WebRTC] Error creating viewer-to-host call:', error);
+    }
+  }, [peer, isHost, hostPeerId]);
+
+  const stopViewerStream = useCallback(() => {
+    console.log('[WebRTC] Viewer stopping stream share');
+    if (viewerToHostCallRef.current) {
+      viewerToHostCallRef.current.close();
+      viewerToHostCallRef.current = null;
+    }
+    if (viewerLocalStream) {
+      viewerLocalStream.getTracks().forEach(track => track.stop());
+      setViewerLocalStream(null);
+    }
+  }, [viewerLocalStream]);
+
   return {
     peer,
     isConnected,
@@ -439,5 +576,10 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
     stopBroadcast,
     connectToStream,
     sendMessage,
+    // Viewer streaming
+    viewerStreams: isHost ? Array.from(viewerStreams.values()) : [],
+    viewerLocalStream: !isHost ? viewerLocalStream : null,
+    startViewerStream: !isHost ? startViewerStream : undefined,
+    stopViewerStream: !isHost ? stopViewerStream : undefined,
   };
 };
