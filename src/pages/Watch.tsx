@@ -1,7 +1,9 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Share2, Heart, Users, Loader2, Play, Video, VideoOff, Mic, MicOff, Monitor, Camera, X, Radio, Check, XCircle } from 'lucide-react';
+import { ArrowLeft, Share2, Heart, Users, Loader2, Play } from 'lucide-react';
+// COMMENTED OUT - Viewer streaming icons - Uncomment when needed
+// import { Video, VideoOff, Mic, MicOff, Monitor, Camera, X, Radio, Check, XCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatPanel from '@/components/ChatPanel';
 import LiveBadge from '@/components/LiveBadge';
@@ -12,13 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 const Watch = () => {
   const { streamId } = useParams();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const viewerVideoRef = useRef<HTMLVideoElement>(null);
+  // COMMENTED OUT - Viewer video ref - Uncomment when needed
+  // const viewerVideoRef = useRef<HTMLVideoElement>(null);
   const [hasConnected, setHasConnected] = useState(false);
   const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
   const [username] = useState(() => `Viewer${Math.floor(Math.random() * 9999)}`);
-  const [viewerStream, setViewerStream] = useState<MediaStream | null>(null);
-  const [isViewerVideoEnabled, setIsViewerVideoEnabled] = useState(true);
-  const [isViewerAudioEnabled, setIsViewerAudioEnabled] = useState(true);
+  // COMMENTED OUT - Viewer streaming state - Uncomment when needed
+  // const [viewerStream, setViewerStream] = useState<MediaStream | null>(null);
+  // const [isViewerVideoEnabled, setIsViewerVideoEnabled] = useState(true);
+  // const [isViewerAudioEnabled, setIsViewerAudioEnabled] = useState(true);
   const { toast } = useToast();
 
   const { 
@@ -29,20 +33,21 @@ const Watch = () => {
     messages, 
     sendMessage, 
     viewerCount,
-    viewerLocalStream,
-    otherViewerStreams,
-    startViewerStream,
-    stopViewerStream,
+    // COMMENTED OUT - Viewer streaming - Uncomment when needed
+    // viewerLocalStream,
+    // otherViewerStreams,
+    // startViewerStream,
+    // stopViewerStream,
   } = useWebRTC({
     streamId: streamId || '',
     isHost: false,
     username,
   });
 
-  // Track status of camera, mic, and screenshare
-  const [hasCamera, setHasCamera] = useState(false);
-  const [hasMic, setHasMic] = useState(false);
-  const [hasScreenShare, setHasScreenShare] = useState(false);
+  // COMMENTED OUT - Status tracking - Uncomment when needed
+  // const [hasCamera, setHasCamera] = useState(false);
+  // const [hasMic, setHasMic] = useState(false);
+  // const [hasScreenShare, setHasScreenShare] = useState(false);
 
   // Connect to stream when peer is ready
   useEffect(() => {
@@ -142,147 +147,146 @@ const Watch = () => {
     }
   }, [remoteStream]);
 
-  // Handle viewer's own stream preview
-  useEffect(() => {
-    if (viewerLocalStream && viewerVideoRef.current) {
-      viewerVideoRef.current.srcObject = viewerLocalStream;
-      viewerVideoRef.current.play().catch(console.error);
-      setViewerStream(viewerLocalStream);
-      
-      // Update status based on tracks
-      const hasVideo = viewerLocalStream.getVideoTracks().length > 0;
-      const hasAudio = viewerLocalStream.getAudioTracks().length > 0;
-      const isScreenShare = viewerLocalStream.getVideoTracks().some(track => track.label.includes('screen') || track.label.includes('Screen'));
-      
-      setHasCamera(hasVideo && !isScreenShare);
-      setHasScreenShare(hasVideo && isScreenShare);
-      setHasMic(hasAudio);
-    } else if (!viewerLocalStream && viewerVideoRef.current) {
-      viewerVideoRef.current.srcObject = null;
-      setViewerStream(null);
-      setHasCamera(false);
-      setHasMic(false);
-      setHasScreenShare(false);
-    }
-  }, [viewerLocalStream]);
+  // COMMENTED OUT - Viewer stream preview and functions - Uncomment when needed
+  // useEffect(() => {
+  //   if (viewerLocalStream && viewerVideoRef.current) {
+  //     viewerVideoRef.current.srcObject = viewerLocalStream;
+  //     viewerVideoRef.current.play().catch(console.error);
+  //     setViewerStream(viewerLocalStream);
+  //     
+  //     const hasVideo = viewerLocalStream.getVideoTracks().length > 0;
+  //     const hasAudio = viewerLocalStream.getAudioTracks().length > 0;
+  //     const isScreenShare = viewerLocalStream.getVideoTracks().some(track => track.label.includes('screen') || track.label.includes('Screen'));
+  //     
+  //     setHasCamera(hasVideo && !isScreenShare);
+  //     setHasScreenShare(hasVideo && isScreenShare);
+  //     setHasMic(hasAudio);
+  //   } else if (!viewerLocalStream && viewerVideoRef.current) {
+  //     viewerVideoRef.current.srcObject = null;
+  //     setViewerStream(null);
+  //     setHasCamera(false);
+  //     setHasMic(false);
+  //     setHasScreenShare(false);
+  //   }
+  // }, [viewerLocalStream]);
 
-  const startViewerCamera = async () => {
-    try {
-      if (!startViewerStream) return;
-      
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user'
-        },
-        audio: true,
-      });
-      
-      startViewerStream(stream);
-      setIsViewerVideoEnabled(true);
-      setIsViewerAudioEnabled(true);
-      setHasCamera(true);
-      setHasMic(true);
-      setHasScreenShare(false);
-      toast({
-        title: 'Camera Started',
-        description: 'Your camera is now visible to others.',
-      });
-    } catch (error: any) {
-      console.error('[Watch] Camera error:', error);
-      toast({
-        title: 'Camera Error',
-        description: error.message || 'Could not access camera.',
-        variant: 'destructive',
-      });
-    }
-  };
+  // const startViewerCamera = async () => {
+  //   try {
+  //     if (!startViewerStream) return;
+  //     
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: {
+  //         width: { ideal: 1280 },
+  //         height: { ideal: 720 },
+  //         facingMode: 'user'
+  //       },
+  //       audio: true,
+  //     });
+  //     
+  //     startViewerStream(stream);
+  //     setIsViewerVideoEnabled(true);
+  //     setIsViewerAudioEnabled(true);
+  //     setHasCamera(true);
+  //     setHasMic(true);
+  //     setHasScreenShare(false);
+  //     toast({
+  //       title: 'Camera Started',
+  //       description: 'Your camera is now visible to others.',
+  //     });
+  //   } catch (error: any) {
+  //     console.error('[Watch] Camera error:', error);
+  //     toast({
+  //       title: 'Camera Error',
+  //       description: error.message || 'Could not access camera.',
+  //       variant: 'destructive',
+  //     });
+  //   }
+  // };
 
-  const startViewerScreenShare = async () => {
-    try {
-      if (!startViewerStream) return;
-      
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
-        audio: true,
-      });
-      
-      startViewerStream(stream);
-      setIsViewerVideoEnabled(true);
-      setIsViewerAudioEnabled(true);
-      setHasScreenShare(true);
-      setHasCamera(false);
-      setHasMic(stream.getAudioTracks().length > 0);
-      
-      stream.getVideoTracks()[0].onended = () => {
-        if (stopViewerStream) {
-          stopViewerStream();
-          setHasScreenShare(false);
-          setHasMic(false);
-          toast({
-            title: 'Screen Share Ended',
-            description: 'Screen sharing was stopped.',
-          });
-        }
-      };
-      
-      toast({
-        title: 'Screen Share Started',
-        description: 'Your screen is now visible to others.',
-      });
-    } catch (error: any) {
-      console.error('[Watch] Screen share error:', error);
-      toast({
-        title: 'Screen Share Error',
-        description: error.message || 'Could not start screen sharing.',
-        variant: 'destructive',
-      });
-    }
-  };
+  // const startViewerScreenShare = async () => {
+  //   try {
+  //     if (!startViewerStream) return;
+  //     
+  //     const stream = await navigator.mediaDevices.getDisplayMedia({
+  //       video: {
+  //         width: { ideal: 1920 },
+  //         height: { ideal: 1080 }
+  //       },
+  //       audio: true,
+  //     });
+  //     
+  //     startViewerStream(stream);
+  //     setIsViewerVideoEnabled(true);
+  //     setIsViewerAudioEnabled(true);
+  //     setHasScreenShare(true);
+  //     setHasCamera(false);
+  //     setHasMic(stream.getAudioTracks().length > 0);
+  //     
+  //     stream.getVideoTracks()[0].onended = () => {
+  //       if (stopViewerStream) {
+  //         stopViewerStream();
+  //         setHasScreenShare(false);
+  //         setHasMic(false);
+  //         toast({
+  //           title: 'Screen Share Ended',
+  //           description: 'Screen sharing was stopped.',
+  //         });
+  //       }
+  //     };
+  //     
+  //     toast({
+  //       title: 'Screen Share Started',
+  //       description: 'Your screen is now visible to others.',
+  //     });
+  //   } catch (error: any) {
+  //     console.error('[Watch] Screen share error:', error);
+  //     toast({
+  //       title: 'Screen Share Error',
+  //       description: error.message || 'Could not start screen sharing.',
+  //       variant: 'destructive',
+  //     });
+  //   }
+  // };
 
-  const stopViewerSharing = () => {
-    if (stopViewerStream) {
-      stopViewerStream();
-      setHasCamera(false);
-      setHasMic(false);
-      setHasScreenShare(false);
-      toast({
-        title: 'Sharing Stopped',
-        description: 'You are no longer sharing your camera/screen.',
-      });
-    }
-  };
+  // const stopViewerSharing = () => {
+  //   if (stopViewerStream) {
+  //     stopViewerStream();
+  //     setHasCamera(false);
+  //     setHasMic(false);
+  //     setHasScreenShare(false);
+  //     toast({
+  //       title: 'Sharing Stopped',
+  //       description: 'You are no longer sharing your camera/screen.',
+  //     });
+  //   }
+  // };
 
-  const toggleViewerVideo = () => {
-    if (viewerStream) {
-      const newState = !isViewerVideoEnabled;
-      viewerStream.getVideoTracks().forEach((track) => {
-        track.enabled = newState;
-      });
-      setIsViewerVideoEnabled(newState);
-      if (viewerStream.getVideoTracks().length > 0) {
-        const isScreenShare = viewerStream.getVideoTracks().some(track => track.label.includes('screen') || track.label.includes('Screen'));
-        if (!isScreenShare) {
-          setHasCamera(newState);
-        }
-      }
-    }
-  };
+  // const toggleViewerVideo = () => {
+  //   if (viewerStream) {
+  //     const newState = !isViewerVideoEnabled;
+  //     viewerStream.getVideoTracks().forEach((track) => {
+  //       track.enabled = newState;
+  //     });
+  //     setIsViewerVideoEnabled(newState);
+  //     if (viewerStream.getVideoTracks().length > 0) {
+  //       const isScreenShare = viewerStream.getVideoTracks().some(track => track.label.includes('screen') || track.label.includes('Screen'));
+  //       if (!isScreenShare) {
+  //         setHasCamera(newState);
+  //       }
+  //     }
+  //   }
+  // };
 
-  const toggleViewerAudio = () => {
-    if (viewerStream) {
-      const newState = !isViewerAudioEnabled;
-      viewerStream.getAudioTracks().forEach((track) => {
-        track.enabled = newState;
-      });
-      setIsViewerAudioEnabled(newState);
-      setHasMic(newState);
-    }
-  };
+  // const toggleViewerAudio = () => {
+  //   if (viewerStream) {
+  //     const newState = !isViewerAudioEnabled;
+  //     viewerStream.getAudioTracks().forEach((track) => {
+  //       track.enabled = newState;
+  //     });
+  //     setIsViewerAudioEnabled(newState);
+  //     setHasMic(newState);
+  //   }
+  // };
 
   if (!streamId) {
     return (
@@ -426,8 +430,8 @@ const Watch = () => {
               </div>
             </motion.div>
 
-            {/* Viewer Sharing Controls */}
-            {remoteStream && (
+            {/* Viewer Sharing Controls - COMMENTED OUT - Uncomment when needed */}
+            {/* {remoteStream && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -517,7 +521,6 @@ const Watch = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Preview - Always show when sharing */}
                     <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                       <video
                         ref={viewerVideoRef}
@@ -532,7 +535,6 @@ const Watch = () => {
                           <span className="ml-2 text-muted-foreground">Audio Only</span>
                         </div>
                       )}
-                      {/* Status indicators */}
                       <div className="absolute top-2 right-2 flex gap-1">
                         {hasCamera && (
                           <div className="bg-green-500/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-1">
@@ -555,7 +557,6 @@ const Watch = () => {
                       </div>
                     </div>
                     
-                    {/* Controls */}
                     <div className="flex items-center justify-center gap-2">
                       {viewerStream && viewerStream.getVideoTracks().length > 0 && (
                         <Button
@@ -589,11 +590,11 @@ const Watch = () => {
                   </div>
                 )}
               </motion.div>
-            )}
+            )} */}
           </div>
 
-          {/* Other Viewers' Streams */}
-          {otherViewerStreams && otherViewerStreams.length > 0 && (
+          {/* Other Viewers' Streams - COMMENTED OUT - Uncomment when needed */}
+          {/* {otherViewerStreams && otherViewerStreams.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -607,7 +608,7 @@ const Watch = () => {
                 ))}
               </div>
             </motion.div>
-          )}
+          )} */}
 
           {/* Chat Sidebar */}
           <motion.div
@@ -624,35 +625,35 @@ const Watch = () => {
   );
 };
 
-// Other Viewer Stream Component
-const OtherViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+// COMMENTED OUT - Other Viewer Stream Component - Uncomment when needed
+// const OtherViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
+//   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.play().catch(console.error);
-    }
-  }, [stream]);
+//   useEffect(() => {
+//     if (videoRef.current && stream) {
+//       videoRef.current.srcObject = stream;
+//       videoRef.current.play().catch(console.error);
+//     }
+//   }, [stream]);
 
-  return (
-    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        className="w-full h-full object-cover"
-      />
-      {stream.getVideoTracks().length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-          <Mic className="w-8 h-8 text-muted-foreground" />
-        </div>
-      )}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-        <p className="text-xs font-medium text-white truncate">{username}</p>
-      </div>
-    </div>
-  );
-};
+//   return (
+//     <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+//       <video
+//         ref={videoRef}
+//         autoPlay
+//         playsInline
+//         className="w-full h-full object-cover"
+//       />
+//       {stream.getVideoTracks().length === 0 && (
+//         <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+//           <Mic className="w-8 h-8 text-muted-foreground" />
+//         </div>
+//       )}
+//       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+//         <p className="text-xs font-medium text-white truncate">{username}</p>
+//       </div>
+//     </div>
+//   );
+// };
 
 export default Watch;
