@@ -154,16 +154,34 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       newPeer.on('call', (call) => {
         console.log('[WebRTC] Incoming call from viewer:', call.peer);
         
+        let isViewerSharing = false;
+        let viewerStreamReceived = false;
+        
         // Check if this is a viewer sharing their stream (they send a stream)
         // Listen for stream from viewer - if we receive one, it means viewer is sharing
         call.on('stream', (incomingStream) => {
           console.log('[WebRTC] Host received stream from viewer:', call.peer);
+          viewerStreamReceived = true;
+          isViewerSharing = true;
+          
           // This is a viewer sharing their stream
           // Get username from stored usernames or use default
           const viewerUsername = peerUsernamesRef.current.get(call.peer) || `Viewer-${call.peer.substring(0, 8)}`;
+          
+          // Ensure tracks are enabled
+          incomingStream.getVideoTracks().forEach(track => {
+            track.enabled = true;
+            console.log('[WebRTC] Viewer video track:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+          });
+          incomingStream.getAudioTracks().forEach(track => {
+            track.enabled = true;
+            console.log('[WebRTC] Viewer audio track:', { id: track.id, enabled: track.enabled, readyState: track.readyState, muted: track.muted });
+          });
+          
           setViewerStreams((prev) => {
             const newMap = new Map(prev);
             newMap.set(call.peer, { stream: incomingStream, username: viewerUsername });
+            console.log('[WebRTC] Added viewer stream to state, total streams:', newMap.size);
             return newMap;
           });
           viewerCallsRef.current.set(call.peer, call);
@@ -178,16 +196,6 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
               videoTracks: videoTracks.length,
               audioTracks: audioTracks.length,
               totalViewers: connectionsRef.current.size,
-            });
-            
-            // Ensure tracks are enabled
-            videoTracks.forEach(track => {
-              track.enabled = true;
-              console.log('[WebRTC] Video track for broadcast:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
-            });
-            audioTracks.forEach(track => {
-              track.enabled = true;
-              console.log('[WebRTC] Audio track for broadcast:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
             });
             
             let broadcastCount = 0;
@@ -244,80 +252,95 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
           });
         });
         
-        // Answer the call - if viewer is sharing, we still need to answer
-        // If viewer wants to receive, we answer with our stream
-        if (localStreamRef.current) {
-          // Host already has a stream, answer immediately
-          const stream = localStreamRef.current;
-          const videoTracks = stream.getVideoTracks();
-          const audioTracks = stream.getAudioTracks();
-          
-          console.log('[WebRTC] Answering call with existing stream');
-          console.log('[WebRTC] Stream details when answering:', {
-            id: stream.id,
-            active: stream.active,
-            videoTracks: videoTracks.length,
-            audioTracks: audioTracks.length,
-          });
-          
-          // Log audio track details
-          audioTracks.forEach((track, index) => {
-            console.log(`[WebRTC] Audio track ${index}:`, {
-              id: track.id,
-              enabled: track.enabled,
-              readyState: track.readyState,
-              muted: track.muted,
+        // Answer the call - differentiate between viewer sharing vs viewer receiving
+        // Wait a bit to see if viewer sends a stream first
+        const answerTimeout = setTimeout(() => {
+          if (!viewerStreamReceived && localStreamRef.current) {
+            // Viewer wants to receive host's stream, not sharing their own
+            console.log('[WebRTC] Viewer wants to receive host stream, answering with host stream');
+            const stream = localStreamRef.current;
+            const videoTracks = stream.getVideoTracks();
+            const audioTracks = stream.getAudioTracks();
+            
+            console.log('[WebRTC] Answering call with existing stream');
+            console.log('[WebRTC] Stream details when answering:', {
+              id: stream.id,
+              active: stream.active,
+              videoTracks: videoTracks.length,
+              audioTracks: audioTracks.length,
             });
-            if (!track.enabled) {
-              console.log('[WebRTC] Enabling audio track');
-              track.enabled = true;
-            }
-          });
-          
-          // Create a new MediaStream with all tracks to ensure they're all transmitted
-          // This helps ensure PeerJS includes both video and audio tracks
-          const answerStream = new MediaStream();
-          videoTracks.forEach(track => {
-            answerStream.addTrack(track);
-            console.log('[WebRTC] Added video track to answer stream');
-          });
-          audioTracks.forEach(track => {
-            answerStream.addTrack(track);
-            console.log('[WebRTC] Added audio track to answer stream');
-          });
-          
-          console.log('[WebRTC] Answer stream created with:', {
-            videoTracks: answerStream.getVideoTracks().length,
-            audioTracks: answerStream.getAudioTracks().length,
-            totalTracks: answerStream.getTracks().length,
-          });
-          
-          try {
-            call.answer(answerStream);
-            console.log('[WebRTC] Call answered successfully with stream containing all tracks');
-            connectionsRef.current.set(call.peer, call);
-            setViewerCount(connectionsRef.current.size);
-
-            call.on('close', () => {
-              console.log('[WebRTC] Viewer disconnected:', call.peer);
-              connectionsRef.current.delete(call.peer);
+            
+            const answerStream = new MediaStream();
+            videoTracks.forEach(track => {
+              answerStream.addTrack(track);
+              console.log('[WebRTC] Added video track to answer stream');
+            });
+            audioTracks.forEach(track => {
+              answerStream.addTrack(track);
+              console.log('[WebRTC] Added audio track to answer stream');
+            });
+            
+            console.log('[WebRTC] Answer stream created with:', {
+              videoTracks: answerStream.getVideoTracks().length,
+              audioTracks: answerStream.getAudioTracks().length,
+              totalTracks: answerStream.getTracks().length,
+            });
+            
+            try {
+              call.answer(answerStream);
+              console.log('[WebRTC] Call answered successfully with stream containing all tracks');
+              connectionsRef.current.set(call.peer, call);
               setViewerCount(connectionsRef.current.size);
-              // Also remove from viewer streams if it was there
-              setViewerStreams((prev) => {
-                const newMap = new Map(prev);
-                newMap.delete(call.peer);
-                return newMap;
-              });
-              viewerCallsRef.current.delete(call.peer);
-            });
 
-            call.on('error', (err) => {
-              console.error('[WebRTC] Call error after answering:', err);
-            });
-          } catch (error) {
-            console.error('[WebRTC] Error answering call:', error);
+              call.on('close', () => {
+                console.log('[WebRTC] Viewer disconnected:', call.peer);
+                connectionsRef.current.delete(call.peer);
+                setViewerCount(connectionsRef.current.size);
+                // Also remove from viewer streams if it was there
+                setViewerStreams((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(call.peer);
+                  return newMap;
+                });
+                viewerCallsRef.current.delete(call.peer);
+              });
+
+              call.on('error', (err) => {
+                console.error('[WebRTC] Call error after answering:', err);
+              });
+            } catch (error) {
+              console.error('[WebRTC] Error answering call:', error);
+            }
+          } else if (viewerStreamReceived) {
+            // Viewer is sharing their stream, just answer with a dummy stream to complete the connection
+            console.log('[WebRTC] Viewer is sharing stream, answering with dummy stream');
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.fillRect(0, 0, 1, 1);
+            const dummyStream = canvas.captureStream(0);
+            
+            try {
+              call.answer(dummyStream);
+              console.log('[WebRTC] Answered call with dummy stream to accept viewer stream');
+              connectionsRef.current.set(call.peer, call);
+              
+              call.on('close', () => {
+                console.log('[WebRTC] Viewer disconnected:', call.peer);
+                connectionsRef.current.delete(call.peer);
+                setViewerStreams((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(call.peer);
+                  return newMap;
+                });
+                viewerCallsRef.current.delete(call.peer);
+              });
+            } catch (error) {
+              console.error('[WebRTC] Error answering call with dummy stream:', error);
+            }
           }
-        } else {
+        }, 200);
           // Host doesn't have a stream yet, answer with dummy stream to accept viewer's stream
           console.log('[WebRTC] Host has no stream, answering with dummy stream to accept viewer stream');
           const canvas = document.createElement('canvas');
