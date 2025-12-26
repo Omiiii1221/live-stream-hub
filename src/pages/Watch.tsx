@@ -170,13 +170,37 @@ const Watch = () => {
     try {
       if (!startViewerStream) return;
       
+      // Stop existing stream if any
+      if (viewerStream) {
+        viewerStream.getTracks().forEach(track => track.stop());
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
           facingMode: 'user'
         },
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      
+      // Ensure all tracks are enabled
+      stream.getVideoTracks().forEach(track => {
+        track.enabled = true;
+        console.log('[Watch] Video track:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+      });
+      stream.getAudioTracks().forEach(track => {
+        track.enabled = true;
+        console.log('[Watch] Audio track:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+      });
+      
+      console.log('[Watch] Starting camera stream', {
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
       });
       
       startViewerStream(stream);
@@ -203,12 +227,36 @@ const Watch = () => {
     try {
       if (!startViewerStream) return;
       
+      // Stop existing stream if any
+      if (viewerStream) {
+        viewerStream.getTracks().forEach(track => track.stop());
+      }
+      
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         },
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      
+      // Ensure all tracks are enabled
+      stream.getVideoTracks().forEach(track => {
+        track.enabled = true;
+        console.log('[Watch] Screen share video track:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+      });
+      stream.getAudioTracks().forEach(track => {
+        track.enabled = true;
+        console.log('[Watch] Screen share audio track:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+      });
+      
+      console.log('[Watch] Starting screen share stream', {
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
       });
       
       startViewerStream(stream);

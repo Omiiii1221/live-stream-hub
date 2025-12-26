@@ -169,31 +169,73 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
           viewerCallsRef.current.set(call.peer, call);
           
           // Broadcast this viewer's stream to all other viewers
-          // Create a new MediaStream with the same tracks for each viewer
+          // Only broadcast to connected peers
           setTimeout(() => {
             const videoTracks = incomingStream.getVideoTracks();
             const audioTracks = incomingStream.getAudioTracks();
             
+            console.log('[WebRTC] Preparing to broadcast viewer stream', {
+              videoTracks: videoTracks.length,
+              audioTracks: audioTracks.length,
+              totalViewers: connectionsRef.current.size,
+            });
+            
+            // Ensure tracks are enabled
+            videoTracks.forEach(track => {
+              track.enabled = true;
+              console.log('[WebRTC] Video track for broadcast:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+            });
+            audioTracks.forEach(track => {
+              track.enabled = true;
+              console.log('[WebRTC] Audio track for broadcast:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+            });
+            
+            let broadcastCount = 0;
             connectionsRef.current.forEach((viewerCall, viewerPeerId) => {
               if (viewerPeerId !== call.peer) {
-                try {
-                  // Create a new stream with the same tracks for broadcasting
-                  const broadcastStream = new MediaStream();
-                  videoTracks.forEach(track => broadcastStream.addTrack(track));
-                  audioTracks.forEach(track => broadcastStream.addTrack(track));
-                  
-                  const broadcastCall = newPeer.call(viewerPeerId, broadcastStream);
-                  if (broadcastCall) {
-                    console.log(`[WebRTC] Broadcasting viewer ${call.peer} stream to ${viewerPeerId}`);
-                    broadcastCall.on('error', (err) => {
-                      console.error(`[WebRTC] Error broadcasting to ${viewerPeerId}:`, err);
+                // Check if peer is still connected
+                if (newPeer && newPeer.id && viewerCall && viewerCall.open) {
+                  try {
+                    // Create a new stream with the same tracks for broadcasting
+                    const broadcastStream = new MediaStream();
+                    videoTracks.forEach(track => {
+                      broadcastStream.addTrack(track);
                     });
+                    audioTracks.forEach(track => {
+                      broadcastStream.addTrack(track);
+                    });
+                    
+                    console.log(`[WebRTC] Attempting to broadcast to ${viewerPeerId}`, {
+                      streamTracks: broadcastStream.getTracks().length,
+                      videoTracks: broadcastStream.getVideoTracks().length,
+                      audioTracks: broadcastStream.getAudioTracks().length,
+                    });
+                    
+                    const broadcastCall = newPeer.call(viewerPeerId, broadcastStream);
+                    if (broadcastCall) {
+                      broadcastCount++;
+                      console.log(`[WebRTC] Broadcasting viewer ${call.peer} stream to ${viewerPeerId}`);
+                      
+                      broadcastCall.on('error', (err) => {
+                        console.error(`[WebRTC] Error broadcasting to ${viewerPeerId}:`, err);
+                      });
+                      
+                      broadcastCall.on('close', () => {
+                        console.log(`[WebRTC] Broadcast call to ${viewerPeerId} closed`);
+                      });
+                    } else {
+                      console.warn(`[WebRTC] Failed to create broadcast call to ${viewerPeerId}`);
+                    }
+                  } catch (error) {
+                    console.error(`[WebRTC] Error creating broadcast call to ${viewerPeerId}:`, error);
                   }
-                } catch (error) {
-                  console.error(`[WebRTC] Error creating broadcast call to ${viewerPeerId}:`, error);
+                } else {
+                  console.warn(`[WebRTC] Skipping broadcast to ${viewerPeerId} - peer not connected`);
                 }
               }
             });
+            
+            console.log(`[WebRTC] Broadcast initiated to ${broadcastCount} viewers`);
           }, 500);
           
           // Track when this stream ends
@@ -583,23 +625,59 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
 
   // Viewer functions to share their stream
   const startViewerStream = useCallback(async (stream: MediaStream) => {
-    if (!peer || isHost) {
-      console.log('[WebRTC] Cannot start viewer stream: peer not ready or is host');
+    if (!peer || isHost || !peer.id) {
+      console.log('[WebRTC] Cannot start viewer stream: peer not ready, is host, or no peer ID');
       return;
     }
 
-    console.log('[WebRTC] Viewer starting to share stream to host');
-    setViewerLocalStream(stream);
-    
+    // Prevent multiple simultaneous calls - if call exists and is open, don't create another
+    if (viewerToHostCallRef.current && viewerToHostCallRef.current.open) {
+      console.log('[WebRTC] Already sharing stream with an active call, skipping duplicate');
+      // Just update the local stream reference
+      setViewerLocalStream(stream);
+      return;
+    }
+
+    // Stop any existing local stream tracks
+    if (viewerLocalStream) {
+      viewerLocalStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Close existing call if any
     if (viewerToHostCallRef.current) {
       console.log('[WebRTC] Closing existing viewer-to-host call');
       viewerToHostCallRef.current.close();
+      viewerToHostCallRef.current = null;
+      // Wait a bit for the call to close
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
+
+    // Ensure audio tracks are enabled
+    stream.getAudioTracks().forEach(track => {
+      track.enabled = true;
+      console.log('[WebRTC] Audio track enabled:', { id: track.id, enabled: track.enabled, readyState: track.readyState, muted: track.muted });
+    });
+
+    // Ensure video tracks are enabled
+    stream.getVideoTracks().forEach(track => {
+      track.enabled = true;
+      console.log('[WebRTC] Video track enabled:', { id: track.id, enabled: track.enabled, readyState: track.readyState });
+    });
+
+    console.log('[WebRTC] Viewer starting to share stream to host', {
+      videoTracks: stream.getVideoTracks().length,
+      audioTracks: stream.getAudioTracks().length,
+      streamId: stream.id,
+    });
+    
+    setViewerLocalStream(stream);
 
     try {
       const call = peer.call(hostPeerId, stream);
       if (!call) {
         console.error('[WebRTC] Failed to create call to host for viewer stream');
+        stream.getTracks().forEach(track => track.stop());
+        setViewerLocalStream(null);
         return;
       }
 
@@ -621,8 +699,10 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       });
     } catch (error) {
       console.error('[WebRTC] Error creating viewer-to-host call:', error);
+      stream.getTracks().forEach(track => track.stop());
+      setViewerLocalStream(null);
     }
-  }, [peer, isHost, hostPeerId]);
+  }, [peer, isHost, hostPeerId, viewerLocalStream]);
 
   const stopViewerStream = useCallback(() => {
     console.log('[WebRTC] Viewer stopping stream share');
