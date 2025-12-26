@@ -25,6 +25,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useWebRTC } from '@/hooks/useWebRTC';
 
+// Viewer Stream Component
+const ViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(console.error);
+    }
+  }, [stream]);
+
+  return (
+    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+        <p className="text-xs font-medium text-white truncate">{username}</p>
+      </div>
+    </div>
+  );
+};
+
 const GoLive = () => {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -398,21 +425,39 @@ const GoLive = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:w-96 lg:h-[calc(100vh-150px)] h-[400px] min-h-[300px]"
+            className="lg:w-96 space-y-4"
           >
-            {isLive ? (
-              <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
-            ) : (
-              <div className="chat-container h-full flex items-center justify-center text-center p-6">
-                <div>
-                  <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium mb-2">Chat Preview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Chat will appear here once you go live
-                  </p>
+            {/* Viewer Streams */}
+            {isLive && viewerStreams.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-4"
+              >
+                <h3 className="font-semibold mb-3 text-sm">Viewer Streams ({viewerStreams.length})</h3>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {viewerStreams.map(({ stream, username }, index) => (
+                    <ViewerStreamItem key={`${username}-${index}`} stream={stream} username={username} />
+                  ))}
                 </div>
-              </div>
+              </motion.div>
             )}
+            
+            <div className="lg:h-[calc(100vh-150px)] h-[400px] min-h-[300px]">
+              {isLive ? (
+                <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
+              ) : (
+                <div className="chat-container h-full flex items-center justify-center text-center p-6">
+                  <div>
+                    <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-medium mb-2">Chat Preview</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Chat will appear here once you go live
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
       </div>
@@ -430,60 +475,6 @@ const GoLive = () => {
             End Stream
           </Button>
         )}
-      </div>
-    </div>
-  );
-};
-
-// Viewer Stream Component
-const ViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.play().catch(console.error);
-    }
-  }, [stream]);
-
-  return (
-    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-        <p className="text-xs font-medium text-white truncate">{username}</p>
-      </div>
-    </div>
-  );
-};
-
-// Viewer Stream Component
-const ViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.play().catch(console.error);
-    }
-  }, [stream]);
-
-  return (
-    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-        <p className="text-xs font-medium text-white truncate">{username}</p>
       </div>
     </div>
   );
