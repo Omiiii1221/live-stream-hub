@@ -341,34 +341,6 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
             }
           }
         }, 200);
-          // Host doesn't have a stream yet, answer with dummy stream to accept viewer's stream
-          console.log('[WebRTC] Host has no stream, answering with dummy stream to accept viewer stream');
-          const canvas = document.createElement('canvas');
-          canvas.width = 1;
-          canvas.height = 1;
-          const ctx = canvas.getContext('2d');
-          if (ctx) ctx.fillRect(0, 0, 1, 1);
-          const dummyStream = canvas.captureStream(0);
-          
-          try {
-            call.answer(dummyStream);
-            console.log('[WebRTC] Answered call with dummy stream to receive viewer stream');
-            connectionsRef.current.set(call.peer, call);
-            
-            call.on('close', () => {
-              console.log('[WebRTC] Viewer disconnected:', call.peer);
-              connectionsRef.current.delete(call.peer);
-              setViewerStreams((prev) => {
-                const newMap = new Map(prev);
-                newMap.delete(call.peer);
-                return newMap;
-              });
-              viewerCallsRef.current.delete(call.peer);
-            });
-          } catch (error) {
-            console.error('[WebRTC] Error answering call with dummy stream:', error);
-          }
-        }
       });
     }
 
