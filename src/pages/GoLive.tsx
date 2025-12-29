@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useWebRTC } from '@/hooks/useWebRTC';
+import Footer from '@/components/Footer';
 
 // Viewer Stream Component
 const ViewerStreamItem = ({ stream, username }: { stream: MediaStream; username: string }) => {
@@ -256,10 +257,10 @@ const GoLive = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 lg:pb-0">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <div className="container py-4">
+      <main className="flex-grow container py-4 pb-24 lg:pb-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Main Content */}
           <div className="flex-1 space-y-4">
@@ -460,7 +461,7 @@ const GoLive = () => {
             </div>
           </motion.div>
         </div>
-      </div>
+      </main>
       
       {/* Sticky Go Live Button for Mobile */}
       <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 border-t border-border/40 backdrop-blur-xl lg:hidden pb-safe">
@@ -476,6 +477,7 @@ const GoLive = () => {
           </Button>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

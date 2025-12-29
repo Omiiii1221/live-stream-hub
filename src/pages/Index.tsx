@@ -1,15 +1,12 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Flame, Radio, Video, Share2, Settings, Users } from 'lucide-react';
+import { Radio, Video, Share2, Settings } from 'lucide-react';
 import Header from '@/components/Header';
-import StreamCard from '@/components/StreamCard';
-import { mockStreams } from '@/data/mockStreams';
+import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Index = () => {
-  const liveStreams = mockStreams.filter((s) => s.status === 'live');
-
   const howToSteps = [
     {
       icon: <Settings className="w-8 h-8 text-primary" />,
@@ -29,10 +26,10 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <main className="container py-8">
+      <main className="flex-grow container py-8">
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -117,38 +114,8 @@ const Index = () => {
             ))}
           </div>
         </section>
-
-        {/* Live Streams Section */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center gap-2 text-xl font-semibold">
-              <Flame className="w-6 h-6 text-primary" />
-              <h2>Live Now</h2>
-            </div>
-            <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {liveStreams.map((stream, index) => (
-              <StreamCard key={stream.id} stream={stream} index={index} />
-            ))}
-          </div>
-
-          {liveStreams.length === 0 && (
-            <div className="text-center py-16 glass-card rounded-lg">
-              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No one is streaming</h3>
-              <p className="text-muted-foreground mb-4">Check back later or be the first to start a stream!</p>
-              <Button variant="outline" asChild>
-                <Link to="/go-live">
-                  <Radio className="w-4 h-4 mr-2" />
-                  Go Live
-                </Link>
-              </Button>
-            </div>
-          )}
-        </section>
       </main>
+      <Footer />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import LiveBadge from '@/components/LiveBadge';
 import { Button } from '@/components/ui/button';
 import { useWebRTC } from '@/hooks/useWebRTC';
 import { useToast } from '@/hooks/use-toast';
+import Footer from '@/components/Footer';
 
 const Watch = () => {
   const { streamId } = useParams();
@@ -165,10 +166,6 @@ const Watch = () => {
       setHasScreenShare(false);
     }
   }, [viewerLocalStream]);
-
-
-
-
 
   const startViewerCamera = async () => {
     try {
@@ -350,10 +347,10 @@ const Watch = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <div className="container py-6">
+      <main className="flex-grow container py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Content */}
           <div className="flex-1">
@@ -668,7 +665,8 @@ const Watch = () => {
             <ChatPanel viewerCount={viewerCount} messages={messages} sendMessage={sendMessage} />
           </motion.div>
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 };
