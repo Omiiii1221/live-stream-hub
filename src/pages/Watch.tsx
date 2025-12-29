@@ -166,6 +166,10 @@ const Watch = () => {
     }
   }, [viewerLocalStream]);
 
+
+
+
+
   const startViewerCamera = async () => {
     try {
       if (!startViewerStream) return;

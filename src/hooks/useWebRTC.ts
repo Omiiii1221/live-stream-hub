@@ -42,7 +42,7 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
     dataConnectionsRef.current.forEach((conn) => {
       conn.send(message);
     });
-  }, []);
+  }, [setMessages]);
 
   useEffect(() => {
     const peerId = isHost ? hostPeerId : `viewer-${streamId}-${Math.random().toString(36).substr(2, 9)}`;
@@ -367,7 +367,7 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       }
       newPeer.destroy();
     };
-  }, [streamId, isHost, hostPeerId, broadcastMessage]);
+  }, [streamId, isHost, hostPeerId, broadcastMessage, setMessages]);
 
   const startBroadcast = useCallback((stream: MediaStream) => {
     console.log('[WebRTC] Starting broadcast with stream');
@@ -512,7 +512,15 @@ export const useWebRTC = ({ streamId, isHost, username }: UseWebRTCOptions) => {
       const dataConnection = peer.connect(hostPeerId);
       dataConnectionsRef.current.set(hostPeerId, dataConnection);
       dataConnection.on('open', () => console.log('[WebRTC] Data connection established with host'));
-      dataConnection.on('data', (data) => setMessages((prev) => [...prev, data as ChatMessage]));
+      dataConnection.on('data', (data) => {
+        const message = data as ChatMessage;
+        // When the host broadcasts messages, we'll get our own back too.
+        // We check the user ID to ensure we don't display our own message twice,
+        // as it's already been added optimistically in sendMessage.
+        if (message.userId !== peerIdRef.current) {
+          setMessages((prev) => [...prev, message]);
+        }
+      });
       dataConnection.on('close', () => dataConnectionsRef.current.delete(hostPeerId));
 
       call.on('stream', (stream) => {
